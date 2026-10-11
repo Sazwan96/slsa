@@ -1,0 +1,637 @@
+# This workflow uses actions that are not certified by GitHub.  They are
+# provided by a third-party and are governed by separate terms of service,
+# privacy policy, and support documentation.
+#
+# This workflow will install a prebuilt Ruby version, install dependencies, and
+# run tests and linters.
+name: "Ruby on Rails CI"
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:11-alpine
+        ports:
+          - "5432:5432"
+        env:
+          POSTGRES_DB: rails_test
+          POSTGRES_USER: rails
+          POSTGRES_PASSWORD: password
+    env:
+      RAILS_ENV: test
+      DATABASE_URL: "postgres://rails:password@localhost:5432/rails_test"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      # Add or replace dependency steps here
+      - name: Install Ruby and gems
+        uses: ruby/setup-ruby@78c01b705fd9d5ad960d432d3a0cfa341d50e410 # v1.179.1
+        with:
+          bundler-cache: true
+      # Add or replace database setup steps here
+      - name: Set up database schema
+        run: bin/rails db:schema:load
+      # Add or replace test runners here
+      - name: Run tests
+        run: bin/rake
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Install Ruby and gems
+        uses: ruby/setup-ruby@78c01b705fd9d5ad960d432d3a0cfa341d50e410 # v1.179.1
+        with:
+          bundler-cache: true
+      - name: Generate binstubs
+        run: bundle binstubs bundler-audit brakeman rubocop
+      # Add or replace any other lints here
+      - name: Security audit dependencies
+        run: bin/bundler-audit --update
+      - name: Security audit application code
+        run: bin/brakeman -q -w2
+      - name: Lint Ruby files
+        run: bin/rubocop --parallel
+This is the standard GitHub Actions workflow that GitHub auto-generates for Ruby on Rails projects. I can help you with it, but I need to know what you'd like to do. In the meantime, here are some observations and possible improvements.
+
+## Issues in the current file
+
+1. **PostgreSQL 11 is end-of-life.** `postgres:11-alpine` is no longer supported. Bump to `postgres:16-alpine` (or whatever matches your production DB).
+2. **No health check on the Postgres service.** Rails may try to connect before Postgres is ready. Add `options: --health-cmd pg_isready ...`.
+3. **`db:schema:load` assumes `schema.rb` exists.** If your project uses `structure.sql`, you need `db:structure:load` (or `db:schema:load` still works in newer Rails via `schema_format`). Also, `db:schema:load` won't create the test DB in some setups — `db:test:prepare` is often safer.
+4. **`bin/rake` runs whatever the default task is.** If you don't have `Rakefile` configured with a default, this may do nothing. More explicit: `bin/rails test` or `bundle exec rspec`.
+5. **No caching of Ruby gems beyond `bundler-cache: true`.** That's fine — `ruby/setup-ruby` handles it.
+6. **Pinned action SHA** for `ruby/setup-ruby` is good practice. The `actions/checkout@v4` is tagged, which is acceptable but less strict.
+7. **No `concurrency` block** — pushes in quick succession will run duplicate jobs.
+
+## Suggested improvements
+
+```yaml
+name: "Ruby on Rails CI"
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        ports: [ "5432:5432" ]
+        env:
+          POSTGRES_DB: rails_test
+          POSTGRES_USER: rails
+          POSTGRES_PASSWORD: password
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      RAILS_ENV: test
+      DATABASE_URL: "postgres://rails:password@localhost:5432/rails_test"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@78c01b705fd9d5ad960d432d3a0cfa341d50e410 # v1.179.1
+        with:
+          bundler-cache: true
+      - name: Prepare database
+        run: bin/rails db:test:prepare
+      - name: Run tests
+        run: bin/rails test   # or: bundle exec rspec
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@78c01b705fd9d5ad960d432d3a0cfa341d50e410 # v1.179.1
+        with:
+          bundler-cache: true
+      - run: bundle binstubs bundler-audit brakeman rubocop
+      - run: bin/bundler-audit --update
+      - run: bin/brakeman -q -w2
+      - run: bin/rubocop --parallel
+```
+
+## What would you like to do?
+
+Tell me which of these you're after and I'll tailor the response:
+
+- **Fix a failing CI run** — paste the error log.
+- **Add RSpec instead of Minitest** — I'll swap the test step.
+- **Add MySQL / Redis / other services**.
+- **Add a deploy step** (Heroku, Fly, Kamal, etc.).
+- **Speed it up** (parallel jobs, matrix Ruby versions, cache tuning).
+- **Add code coverage / SimpleCov upload**.
+- **Add a `structure.sql` based schema load**.
+
+Which direction do you want to go?
+Since you just said "Yes," I'll assume you want the general improvements I suggested (fix the EOL Postgres, add a health check, add concurrency, and use `db:test:prepare`). Below is a cleaned‑up version of your workflow that incorporates those fixes. If you actually meant one of the specific options (RSpec, deploy, MySQL, etc.), just tell me and I'll adjust.
+
+```yaml
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+#
+# This workflow will install a prebuilt Ruby version, install dependencies, and
+# run tests and linters.
+name: "Ruby on Rails CI"
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+# Cancel superseded runs on the same branch/PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        ports:
+          - "5432:5432"
+        env:
+          POSTGRES_DB: rails_test
+          POSTGRES_USER: rails
+          POSTGRES_PASSWORD: password
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      RAILS_ENV: test
+      DATABASE_URL: "postgres://rails:password@localhost:5432/rails_test"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Ruby and gems
+        uses: ruby/setup-ruby@78c01b705fd9d5ad960d432d3a0cfa341d50e410 # v1.179.1
+        with:
+          bundler-cache: true
+
+      - name: Prepare database
+        run: bin/rails db:test:prepare
+
+      - name: Run tests
+        run: bin/rails test   # or: bundle exec rspec
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Ruby and gems
+        uses: ruby/setup-ruby@78c01b705fd9d5ad960d432d3a0cfa341d50e410 # v1.179.1
+        with:
+          bundler-cache: true
+
+      - name: Generate binstubs
+        run: bundle binstubs bundler-audit brakeman rubocop
+
+      - name: Security audit dependencies
+        run: bin/bundler-audit --update
+
+      - name: Security audit application code
+        run: bin/brakeman -q -w2
+
+      - name: Lint Ruby files
+        run: bin/rubocop --parallel
+```
+
+### What changed and why
+
+| Change | Reason |
+|---|---|
+| `postgres:16-alpine` | PostgreSQL 11 is EOL; 16 is current and supported. |
+| `options: --health-cmd pg_isready ...` | Prevents Rails from connecting before Postgres is ready. |
+| `concurrency` block | Cancels in‑progress runs when you push again quickly, saving CI minutes. |
+| `bin/rails db:test:prepare` | More reliable than `db:schema:load` for creating/loading the test DB (works with both `schema.rb` and `structure.sql`). |
+| `bin/rails test` | Explicit test runner instead of relying on the default Rake task. Replace with `bundle exec rspec` if you use RSpec. |
+
+### If you need something else
+
+Just tell me which one:
+
+- **RSpec instead of Minitest** – swap the test command.
+- **MySQL / Redis / other services** – add to the `services` block.
+- **Deploy step** (Heroku, Fly, Kamal, etc.).
+- **Matrix of Ruby versions**.
+- **Code coverage upload** (SimpleCov + Codecov).
+- **`structure.sql`** – usually works with `db:test:prepare`, but I can adjust if needed.
+
+Which direction do you want to go?
+Got it — here's a "batteries-included" version with the most common additions: a Ruby version matrix, RSpec, SimpleCov coverage upload to Codecov, and a Redis service. Remove any blocks you don't need.
+
+```yaml
+name: "Ruby on Rails CI"
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        ruby: [ "3.2", "3.3" ]
+        # Add more if you support them, e.g.: [ "3.1", "3.2", "3.3" ]
+    services:
+      postgres:
+        image: postgres:16-alpine
+        ports: [ "5432:5432" ]
+        env:
+          POSTGRES_DB: rails_test
+          POSTGRES_USER: rails
+          POSTGRES_PASSWORD: password
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports: [ "6379:6379" ]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      RAILS_ENV: test
+      DATABASE_URL: "postgres://rails:password@localhost:5432/rails_test"
+      REDIS_URL: "redis://localhost:6379/0"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Ruby and gems
+        uses: ruby/setup-ruby@78c01b705fd9d5ad960d432d3a0cfa341d50e410 # v1.179.1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+          bundler-cache: true
+
+      - name: Prepare database
+        run: bin/rails db:test:prepare
+
+      - name: Run RSpec
+        run: bundle exec rspec
+
+      - name: Upload coverage to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage/.resultset.json
+          fail_ci_if_error: false
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Ruby and gems
+        uses: ruby/setup-ruby@78c01b705fd9d5ad960d432d3a0cfa341d50e410 # v1.179.1
+        with:
+          bundler-cache: true
+
+      - name: Generate binstubs
+        run: bundle binstubs bundler-audit brakeman rubocop
+
+      - name: Security audit dependencies
+        run: bin/bundler-audit --update
+
+      - name: Security audit application code
+        run: bin/brakeman -q -w2
+
+      - name: Lint Ruby files
+        run: bin/rubocop --parallel
+```
+
+### What you need on the app side
+
+**1. RSpec + SimpleCov**
+
+`Gemfile`:
+```ruby
+group :test do
+  gem "rspec-rails"
+  gem "simplecov", require: false
+end
+```
+
+`spec/spec_helper.rb` (top of the file, before anything else loads Rails):
+```ruby
+require "simplecov"
+SimpleCov.start "rails"
+```
+
+**2. Codecov secret**
+
+Add `CODECOV_TOKEN` in **Repo → Settings → Secrets and variables → Actions**. If your repo is public you can drop the `token:` line.
+
+**3. Redis (Action Cable / Sidekiq / cache)**
+
+If you don't use Redis, delete the `redis` service and the `REDIS_URL` env var. If you do use it, make sure `config/environments/test.rb` points at `ENV["REDIS_URL"]`.
+
+### Things to remove if not needed
+
+| Block | When to remove |
+|---|---|
+| `matrix.ruby` | You only care about one Ruby version — replace with a fixed `ruby-version: "3.3"`. |
+| `redis` service | You don't use Redis in tests. |
+| Codecov step | You don't want coverage uploads. |
+| RSpec step | You use Minitest — swap to `bin/rails test`. |
+
+### Want to go further?
+
+Tell me the word and I'll add:
+
+- **Deploy** — Kamal, Heroku, Fly.io, or Render.
+- **Docker build & push** to GHCR.
+- **Slack / Discord notification** on failure.
+- **`structure.sql`** schema handling.
+- **Parallel RSpec** with `parallel_tests`.
+
+Which one next?
+Adding the next layer: a **Docker build & push to GHCR** job and a **Kamal deploy** job (Rails' default deploy tool since Rails 7.1). I'll also add a **Slack notification** on failure. Remove what you don't use.
+
+```yaml
+name: "Ruby on Rails CI"
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # ---------------------------------------------------------------
+  # TEST
+  # ---------------------------------------------------------------
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        ruby: [ "3.3" ]
+    services:
+      postgres:
+        image: postgres:16-alpine
+        ports: [ "5432:5432" ]
+        env:
+          POSTGRES_DB: rails_test
+          POSTGRES_USER: rails
+          POSTGRES_PASSWORD: password
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports: [ "6379:6379" ]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      RAILS_ENV: test
+      DATABASE_URL: "postgres://rails:password@localhost:5432/rails_test"
+      REDIS_URL: "redis://localhost:6379/0"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@78c01b705fd9d5ad960d432d3a0cfa341d50e410 # v1.179.1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+          bundler-cache: true
+      - name: Prepare database
+        run: bin/rails db:test:prepare
+      - name: Run RSpec
+        run: bundle exec rspec
+      - name: Upload coverage
+        if: ${{ !cancelled() }}
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage/.resultset.json
+          fail_ci_if_error: false
+
+  # ---------------------------------------------------------------
+  # LINT & SECURITY
+  # ---------------------------------------------------------------
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@78c01b705fd9d5ad960d432d3a0cfa341d50e410 # v1.179.1
+        with:
+          bundler-cache: true
+      - run: bundle binstubs bundler-audit brakeman rubocop
+      - run: bin/bundler-audit --update
+      - run: bin/brakeman -q -w2
+      - run: bin/rubocop --parallel
+
+  # ---------------------------------------------------------------
+  # BUILD & PUSH DOCKER IMAGE (main only)
+  # ---------------------------------------------------------------
+  build:
+    needs: [ test, lint ]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.meta.outputs.tags }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix=sha-,format=short
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: false
+
+  # ---------------------------------------------------------------
+  # DEPLOY VIA KAMAL (main only)
+  # ---------------------------------------------------------------
+  deploy:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://example.com   # <-- change to your real URL
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Ruby and gems
+        uses: ruby/setup-ruby@78c01b705fd9d5ad960d432d3a0cfa341d50e410 # v1.179.1
+        with:
+          bundler-cache: true
+
+      - name: Set up SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Add host to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy with Kamal
+        env:
+          KAMAL_REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+          KAMAL_REGISTRY_USERNAME: ${{ github.actor }}
+          RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
+        run: bin/kamal deploy
+
+  # ---------------------------------------------------------------
+  # NOTIFY ON FAILURE
+  # ---------------------------------------------------------------
+  notify:
+    needs: [ test, lint, build, deploy ]
+    if: ${{ always() && contains(needs.*.result, 'failure') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify Slack
+        uses: slackapi/slack-github-action@v2
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            {
+              "text": "❌ CI failed on `${{ github.repository }}` (${{ github.ref_name }}) — ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            }
+```
+
+### New secrets to configure
+
+**Repo → Settings → Secrets and variables → Actions:**
+
+| Secret | Purpose |
+|---|---|
+| `CODECOV_TOKEN` | Coverage upload (skip if public repo). |
+| `SSH_PRIVATE_KEY` | Private key that can SSH into your deploy host. |
+| `DEPLOY_HOST` | Hostname or IP of your server (for `ssh-keyscan`). |
+| `RAILS_MASTER_KEY` | Contents of `config/master.key`. |
+| `SLACK_WEBHOOK_URL` | Incoming webhook URL from Slack. |
+
+### Kamal prerequisites
+
+Your repo needs a `config/deploy.yml` (generated by `bin/kamal init`) and a `Dockerfile` (Rails 7.1+ ships one by default). Kamal reads image name/tag from `deploy.yml`, so make sure it matches `${REGISTRY}/${IMAGE_NAME}` — otherwise the deploy job will pull the wrong tag.
+
+Minimal `config/deploy.yml` snippet:
+```yaml
+image: ghcr.io/<your-user>/<your-repo>
+servers:
+  web:
+    - <deploy-host-ip>
+registry:
+  server: ghcr.io
+  username: <your-github-username>
+  password:
+    - KAMAL_REGISTRY_PASSWORD
+env:
+  secret:
+    - RAILS_MASTER_KEY
+```
+
+### How the pipeline flows
+
+```
+push to main ─▶ test ─┐
+                      ├─▶ build (GHCR) ─▶ deploy (Kamal) ─▶ ✅
+              lint ───┘                              └─▶ notify on failure
+```
+
+- PRs only run `test` and `lint` (no build/deploy).
+- `main` runs everything and ships to production.
+- Any failure triggers the Slack job.
+
+### Swapping pieces
+
+- **Heroku instead of Kamal** → replace the `deploy` job body with `akhileshns/heroku-deploy@v3.13.12` and set `HEROKU_API_KEY` / `HEROKU_APP_NAME`.
+- **Fly.io instead of Kamal** → use `superfly/flyctl-actions/setup-flyctl@master` + `flyctl deploy --remote-only`.
+- **Render instead of Kamal** → just a `curl` to a deploy hook URL.
+- **No Slack** → drop the `notify` job.
+- **No GHCR** → drop the `build` job and let Kamal build on the server (`bin/kamal deploy` with local registry disabled).
+
+### Want more?
+
+Possible next additions:
+
+- **Parallel RSpec** with `parallel_tests` to cut test time.
+- **Migrations check** — fail the PR if there are uncommitted `db/schema.rb` changes.
+- **`structure.sql`** pipeline.
+- **Dependabot config** for gems + Actions.
+- **Staging environment** with the same workflow but a different `environment:` and tag.
+
+Say **Next** and I'll add the staging environment + parallel RSpec, or name any of the items above.
