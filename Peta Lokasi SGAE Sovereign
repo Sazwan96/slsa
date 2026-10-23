@@ -1,0 +1,960 @@
+```html
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+<meta name="theme-color" content="#00E5FF" />
+<title>SGAE MASTER · FINAL EDITION · MUHAMAD SAZWAN BIN ISMAIL</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&family=Roboto+Mono:wght@400;700&family=Google+Sans:wght@400;700;900&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+:root {
+  --gold:#FFD700; --cyan:#00E5FF; --green:#10B981; --red:#EF4444;
+  --violet:#A855F7; --orange:#F7931A; --blue:#3B82F6; --pink:#EC4899;
+  --bg:#0A0F17; --card:#1E1F21; --card2:#2D2D2D; --border:#3C4043;
+  --text:#E8EAED; --muted:#9AA0A6; --dim:#5F6368;
+}
+html,body { background:var(--bg); color:var(--text); font-family:'Roboto',system-ui,sans-serif; font-size:13px; line-height:1.5; overflow-x:hidden; -webkit-font-smoothing:antialiased; }
+
+/* LOADER */
+#loader { position:fixed; inset:0; z-index:9999; background:#0A0F17; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; transition:opacity .5s; }
+#loader.hide { opacity:0; pointer-events:none; }
+.ld-logo { font-family:'Google Sans',sans-serif; font-size:52px; font-weight:900; letter-spacing:-2px; display:flex; gap:2px; }
+.ld-logo span:nth-child(1){color:#4285F4}.ld-logo span:nth-child(2){color:#EA4335}.ld-logo span:nth-child(3){color:#FBBC04}.ld-logo span:nth-child(4){color:#A855F7}.ld-logo span:nth-child(5){color:#EC4899}.ld-logo span:nth-child(6){color:#10B981}
+.ld-bar { width:min(360px,80vw); height:4px; background:#3C4043; border-radius:2px; overflow:hidden; }
+.ld-bar > div { height:100%; width:0; background:linear-gradient(90deg,#4285F4,#A855F7,#00E5FF,#10B981); border-radius:2px; transition:width .3s; }
+.ld-pct { font-family:'Roboto Mono',monospace; font-size:14px; color:var(--cyan); font-weight:700; }
+.ld-msg { font-size:11px; color:var(--muted); text-align:center; max-width:min(500px,90vw); min-height:16px; }
+
+/* HEADER */
+header { position:sticky; top:0; z-index:100; background:rgba(10,15,23,.96); backdrop-filter:blur(12px); border-bottom:1px solid var(--border); padding:10px 16px; }
+.hdr { max-width:1400px; margin:0 auto; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; }
+.brand-title { font-size:14px; font-weight:900; background:linear-gradient(135deg,#FFD700,#00E5FF,#A855F7,#10B981,#EC4899); background-size:400% 100%; -webkit-background-clip:text; background-clip:text; color:transparent; animation:shim 8s linear infinite; }
+@keyframes shim { 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }
+.brand-sub { font-family:'Roboto Mono',monospace; font-size:9px; color:var(--muted); letter-spacing:.5px; text-transform:uppercase; }
+.hdr-right { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.badge { padding:4px 10px; border-radius:20px; font-family:'Roboto Mono',monospace; font-size:9px; font-weight:700; border:1px solid; }
+.badge.sha { border-color:rgba(0,229,255,.5); color:var(--cyan); background:rgba(0,229,255,.08); }
+.badge.cts { border-color:rgba(247,234,72,.5); color:#F7EA48; background:rgba(247,234,72,.08); }
+.badge.live { border-color:rgba(46,255,176,.5); color:#2effb0; background:rgba(46,255,176,.08); animation:pulse 2s infinite; }
+.badge.live::before { content:''; display:inline-block; width:6px; height:6px; border-radius:50%; background:#2effb0; box-shadow:0 0 6px #2effb0; margin-right:5px; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+.lang-switch { display:flex; gap:2px; background:var(--card); border:1px solid var(--border); border-radius:20px; padding:2px; }
+.lang-btn { padding:4px 10px; border-radius:16px; border:none; background:transparent; color:var(--muted); font-size:9px; font-weight:700; cursor:pointer; transition:.2s; }
+.lang-btn.active { background:var(--cyan); color:#000; }
+.clock { font-family:'Roboto Mono',monospace; font-size:10px; color:var(--cyan); font-weight:600; }
+
+/* LAYOUT */
+.layout { display:grid; grid-template-columns:230px 1fr; gap:16px; max-width:1400px; margin:0 auto; padding:12px 16px 80px; }
+aside.sidebar { position:sticky; top:80px; height:calc(100vh - 100px); overflow-y:auto; padding-right:4px; }
+aside.sidebar::-webkit-scrollbar { width:4px; }
+aside.sidebar::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+.nav-group { margin-bottom:10px; }
+.nav-group-title { font-family:'Roboto Mono',monospace; font-size:8px; color:var(--dim); letter-spacing:1px; text-transform:uppercase; padding:4px 8px; font-weight:700; }
+.nav-item { display:flex; align-items:center; gap:8px; padding:7px 10px; border-radius:8px; color:var(--muted); font-size:11px; font-weight:500; cursor:pointer; transition:.15s; margin-bottom:2px; border:none; background:transparent; width:100%; text-align:left; }
+.nav-item:hover { background:var(--card); color:var(--text); }
+.nav-item.active { background:rgba(0,229,255,.15); color:var(--cyan); font-weight:700; }
+.nav-item i { width:16px; text-align:center; font-size:11px; }
+
+main.content { min-width:0; }
+.section { display:none; animation:fadeIn .3s ease; }
+.section.active { display:block; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+.section-header { margin-bottom:16px; padding-bottom:10px; border-bottom:2px solid var(--border); }
+.section-title { font-family:'Google Sans',sans-serif; font-size:22px; font-weight:900; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.section-title i { color:var(--cyan); }
+.section-sub { font-family:'Roboto Mono',monospace; font-size:10px; color:var(--muted); margin-top:4px; letter-spacing:.5px; }
+
+/* CARDS */
+.card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:14px; margin-bottom:12px; position:relative; overflow:hidden; }
+.card.prio { border-color:rgba(0,229,255,.4); }
+.card.gold { border-color:rgba(255,215,0,.4); }
+.card.prio::before, .card.gold::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; }
+.card.prio::before { background:linear-gradient(90deg,#00E5FF,#10B981); }
+.card.gold::before { background:linear-gradient(90deg,#FFD700,#FFA500); }
+.card-title { font-family:'Google Sans',sans-serif; font-size:13px; font-weight:700; display:flex; align-items:center; gap:6px; margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid var(--border); flex-wrap:wrap; }
+.card-title i { color:var(--cyan); }
+.card-title .badge2 { margin-left:auto; font-family:'Roboto Mono',monospace; font-size:8px; font-weight:700; padding:2px 8px; border-radius:8px; background:rgba(0,229,255,.15); color:var(--cyan); }
+
+/* KPI */
+.kpi-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:8px; margin:12px 0; }
+.kpi { background:var(--card2); border:1px solid var(--border); border-radius:10px; padding:10px; position:relative; overflow:hidden; transition:.2s; cursor:pointer; }
+.kpi:hover { transform:translateY(-2px); border-color:var(--cyan); box-shadow:0 4px 16px rgba(0,229,255,.1); }
+.kpi::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg,#00E5FF,#10B981); }
+.kpi.gold::before { background:linear-gradient(90deg,#FFD700,#FFA500); }
+.kpi.red::before { background:linear-gradient(90deg,#EF4444,#DC2626); }
+.kpi.green::before { background:linear-gradient(90deg,#10B981,#34D399); }
+.kpi.violet::before { background:linear-gradient(90deg,#A855F7,#EC4899); }
+.kpi-icon { width:28px; height:28px; border-radius:8px; background:rgba(0,229,255,.12); color:var(--cyan); display:flex; align-items:center; justify-content:center; font-size:12px; margin-bottom:6px; }
+.kpi-label { font-size:8px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; font-weight:700; }
+.kpi-value { font-family:'Google Sans',sans-serif; font-size:16px; font-weight:900; margin-top:2px; letter-spacing:-.3px; word-break:break-word; }
+.kpi-sub { font-size:8px; color:var(--dim); margin-top:2px; font-family:'Roboto Mono',monospace; }
+
+/* TABLE */
+.table-wrap { overflow-x:auto; margin:0 -14px; padding:0 14px; }
+.table { width:100%; border-collapse:collapse; font-size:11px; min-width:500px; }
+.table thead { background:var(--card2); }
+.table th { padding:8px; text-align:left; font-family:'Google Sans',sans-serif; font-size:9px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; border-bottom:1px solid var(--border); white-space:nowrap; }
+.table td { padding:8px; border-bottom:1px solid var(--border); vertical-align:top; }
+.table tr:last-child td { border-bottom:none; }
+.table tr:hover { background:rgba(255,255,255,.02); }
+.mono { font-family:'Roboto Mono',monospace; font-size:10px; }
+.gold-text { color:var(--gold); font-weight:700; }
+.cyan-text { color:var(--cyan); font-weight:600; }
+.green-text { color:#81C995; font-weight:600; }
+.red-text { color:#F87171; font-weight:600; }
+.violet-text { color:#C084FC; font-weight:600; }
+.flag { font-size:15px; text-align:center; }
+
+/* ROW */
+.row { display:flex; justify-content:space-between; align-items:flex-start; padding:8px 0; border-bottom:1px solid var(--border); font-size:11px; gap:12px; }
+.row:last-child { border-bottom:none; }
+.row .k { color:var(--muted); flex-shrink:0; }
+.row .v { color:var(--text); font-family:'Roboto Mono',monospace; font-size:10px; text-align:right; word-break:break-word; max-width:65%; font-weight:600; }
+.row .v.gold { color:var(--gold); }
+.row .v.cyan { color:var(--cyan); }
+.row .v.green { color:#81C995; }
+.row .v.red { color:#F87171; }
+
+/* SHA */
+.sha-display { background:linear-gradient(135deg,#001a1f,#000); border:2px solid var(--cyan); border-radius:12px; padding:14px; margin:12px 0; position:relative; overflow:hidden; }
+.sha-display::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg,transparent,#00E5FF,transparent); background-size:200% 100%; animation:shimmer 3s linear infinite; }
+@keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+.sha-label { font-family:'Roboto Mono',monospace; font-size:9px; color:var(--cyan); font-weight:700; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:6px; }
+.sha-hash { font-family:'Roboto Mono',monospace; font-size:12px; font-weight:700; color:var(--gold); word-break:break-all; line-height:1.6; text-shadow:0 0 12px rgba(0,229,255,.4); }
+.sha-meta { display:flex; flex-wrap:wrap; justify-content:space-between; gap:6px; font-size:8px; color:var(--muted); margin-top:8px; padding-top:8px; border-top:1px solid rgba(0,229,255,.15); font-family:'Roboto Mono',monospace; }
+
+/* CTS */
+.cts { background:linear-gradient(135deg,#2d2400,#1a1500); border:3px solid #F7EA48; border-radius:14px; padding:16px; text-align:center; margin:12px 0; box-shadow:0 0 30px rgba(247,234,72,.3); }
+.cts-icon { font-size:2rem; color:#F7EA48; margin-bottom:6px; display:inline-block; animation:spin 8s linear infinite; }
+@keyframes spin { to{transform:rotate(360deg)} }
+.cts-title { font-family:'Google Sans',sans-serif; font-size:1.1rem; font-weight:900; color:#F7EA48; letter-spacing:3px; text-transform:uppercase; text-shadow:0 0 20px rgba(247,234,72,.7); }
+.cts-sub { font-family:'Roboto Mono',monospace; font-size:10px; color:#2effb0; letter-spacing:2px; margin-top:4px; font-weight:700; }
+.cts-ref { font-family:'Roboto Mono',monospace; font-size:8px; color:var(--muted); margin-top:4px; }
+
+/* MAP TABS */
+.map-tabs { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; }
+.map-tab { padding:8px 14px; min-height:40px; border-radius:20px; border:2px solid var(--border); background:var(--card); color:var(--muted); font-size:10px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:5px; transition:.2s; }
+.map-tab.active { background:var(--cyan); color:#000; border-color:var(--cyan); }
+.map-tab:hover:not(.active) { border-color:var(--cyan); color:var(--cyan); }
+
+/* MAP CONTAINER */
+.map-container { position:relative; width:100%; height:55vh; min-height:350px; border-radius:12px; overflow:hidden; border:2px solid var(--border); background:#000; margin-bottom:10px; }
+.map-container iframe { width:100%; height:100%; border:0; }
+.map-panel { display:none; width:100%; height:100%; }
+.map-panel.active { display:block; }
+#leaflet-map { width:100%; height:100%; }
+
+.leaflet-container { background:#0a0f17 !important; font-family:'Roboto',sans-serif !important; }
+.leaflet-popup-content-wrapper { background:var(--card) !important; color:var(--text) !important; border:1px solid var(--cyan) !important; border-radius:10px !important; }
+.leaflet-popup-tip { background:var(--card) !important; }
+.popup-title { font-size:12px; font-weight:700; color:var(--cyan); margin-bottom:6px; border-bottom:1px solid var(--border); padding-bottom:4px; }
+.popup-row { display:flex; justify-content:space-between; padding:2px 0; font-size:10px; gap:8px; }
+.popup-row .k { color:var(--muted); }
+.popup-row .v { color:var(--gold); font-family:monospace; text-align:right; max-width:60%; }
+.popup-links { display:flex; gap:4px; margin-top:8px; padding-top:6px; border-top:1px solid var(--border); }
+.popup-links a { flex:1; padding:4px 6px; text-align:center; border-radius:6px; font-size:9px; font-weight:700; text-decoration:none; background:rgba(0,229,255,.15); color:var(--cyan); }
+.popup-links a:hover { background:var(--cyan); color:#000; }
+
+/* CLUSTER ICONS */
+.cluster-icon { background:rgba(0,229,255,.9); color:#000; border:3px solid #FFF; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:11px; box-shadow:0 0 16px rgba(0,229,255,.6); font-family:monospace; }
+
+/* MARKERS */
+.marker-pin { border-radius:50%; border:2px solid #FFF; display:flex; align-items:center; justify-content:center; box-shadow:0 0 10px currentColor,0 2px 4px rgba(0,0,0,.5); }
+.marker-pin.hq { border-width:3px; animation:pulse 2s infinite; }
+@keyframes marker-pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.15)} }
+
+/* ACTIONS */
+.actions { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:8px; margin:10px 0; }
+.action { padding:10px; min-height:44px; border-radius:10px; border:2px solid var(--border); background:var(--card); color:var(--text); font-size:10px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; transition:.2s; text-decoration:none; font-family:inherit; }
+.action:hover { border-color:var(--cyan); color:var(--cyan); transform:translateY(-1px); }
+.action:active { transform:scale(.97); }
+.action.waze { border-color:#00E5FF; color:#00E5FF; }
+.action.osm { border-color:#34A853; color:#81C995; }
+.action.mylot { border-color:#FBBC04; color:#FBBC04; }
+.action.street { border-color:#EC4899; color:#F472B6; }
+.action.export { border-color:#A855F7; color:#C084FC; }
+.action.refresh { border-color:#F97316; color:#FB923C; }
+
+/* FAB */
+#toolbar { position:fixed; bottom:16px; right:16px; z-index:90; display:flex; flex-direction:column; gap:8px; }
+.fab { width:46px; height:46px; border-radius:50%; border:2px solid var(--border); background:rgba(30,31,33,.95); backdrop-filter:blur(10px); color:var(--cyan); font-size:15px; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 16px rgba(0,0,0,.5); transition:.2s; }
+.fab:hover { background:var(--cyan); color:#000; transform:scale(1.1); }
+
+/* MODAL */
+.modal { position:fixed; inset:0; z-index:200; background:rgba(10,15,23,.96); backdrop-filter:blur(12px); display:none; padding:20px; overflow-y:auto; }
+.modal.show { display:flex; align-items:flex-start; justify-content:center; }
+.modal-box { background:var(--card); border:2px solid var(--cyan); border-radius:16px; padding:20px; max-width:700px; width:100%; margin-top:20px; }
+.modal-title { font-family:'Google Sans',sans-serif; font-size:16px; font-weight:700; color:var(--cyan); margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; }
+.modal-close { background:transparent; border:none; color:var(--muted); font-size:20px; cursor:pointer; padding:0; line-height:1; }
+.search-input { width:100%; padding:12px 16px; background:var(--bg); border:1px solid var(--border); border-radius:10px; color:var(--text); font-size:13px; outline:none; font-family:inherit; }
+.search-input:focus { border-color:var(--cyan); }
+.search-results { margin-top:12px; max-height:60vh; overflow-y:auto; }
+.search-result { padding:12px; background:var(--card2); border-radius:8px; margin-bottom:6px; cursor:pointer; transition:.2s; display:flex; justify-content:space-between; align-items:center; gap:8px; }
+.search-result:hover { background:var(--border); }
+.search-result .sr-cat { font-size:8px; color:var(--cyan); text-transform:uppercase; font-family:'Roboto Mono',monospace; padding:2px 6px; border-radius:6px; background:rgba(0,229,255,.15); flex-shrink:0; }
+.search-result .sr-name { flex:1; font-weight:600; font-size:11px; }
+
+/* TICKER */
+#ticker { position:fixed; bottom:0; left:0; right:0; z-index:80; background:rgba(10,15,23,.96); border-top:1px solid var(--border); padding:6px 0; overflow:hidden; white-space:nowrap; font-family:'Roboto Mono',monospace; font-size:10px; }
+.ticker-track { display:inline-flex; gap:20px; padding:0 12px; animation:ticker-scroll 80s linear infinite; }
+@keyframes ticker-scroll { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+.ticker-item { display:inline-flex; gap:5px; align-items:center; padding:0 12px; border-right:1px solid rgba(255,255,255,.08); }
+.ticker-item .sym { color:var(--cyan); font-weight:700; }
+.ticker-item .price { color:var(--gold); font-weight:700; }
+.ticker-item .chg-up { color:#81C995; }
+.ticker-item .chg-dn { color:#F87171; }
+
+/* THEME */
+body.light { background:#F5F5F7; color:#1A1A1A; }
+body.light header { background:rgba(245,245,247,.96); }
+body.light .card, body.light .kpi, body.light .modal-box, body.light .section { background:#FFF; border-color:#D0D0D5; color:#1A1A1A; }
+body.light .nav-item.active { background:rgba(0,150,180,.15); color:#0088A0; }
+body.light .table thead { background:#F0F0F2; }
+body.light .kpi-label, body.light .row .k { color:#5F6368; }
+
+/* RESPONSIVE */
+@media(max-width:900px){
+  .layout { grid-template-columns:1fr; gap:10px; padding:10px 10px 100px; }
+  aside.sidebar { position:relative; top:0; height:auto; max-height:none; overflow-x:auto; overflow-y:hidden; display:flex; gap:4px; padding:0 0 8px 0; white-space:nowrap; }
+  .nav-group { margin:0; display:inline-flex; gap:2px; }
+  .nav-group-title { display:none; }
+  .nav-item { white-space:nowrap; padding:8px 12px; font-size:10px; flex-shrink:0; }
+  .map-container { height:50vh; min-height:280px; }
+  .section-title { font-size:17px; }
+  .kpi-grid { grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); }
+  #toolbar { bottom:60px; right:10px; }
+  .fab { width:40px; height:40px; font-size:13px; }
+}
+</style>
+</head>
+<body>
+
+<div id="loader">
+  <div class="ld-logo"><span>S</span><span>G</span><span>A</span><span>E</span><span>8</span><span>⚜</span></div>
+  <div style="font-family:'Google Sans',sans-serif;font-size:13px;font-weight:600;color:var(--muted);text-align:center;padding:0 20px">FINAL EDITION · MUHAMAD SAZWAN BIN ISMAIL</div>
+  <div class="ld-bar"><div id="load-bar"></div></div>
+  <div class="ld-pct" id="load-pct">0%</div>
+  <div class="ld-msg" id="load-msg">Initialising...</div>
+</div>
+
+<header>
+  <div class="hdr">
+    <div>
+      <div class="brand-title">⚜️ SGAE MASTER · FINAL EDITION</div>
+      <div class="brand-sub">MUHAMAD SAZWAN BIN ISMAIL · MSI-2026-07734 · SOVEREIGN-7734</div>
+    </div>
+    <div class="hdr-right">
+      <span class="badge sha">SHA-256</span>
+      <span class="badge cts">L04 CTS</span>
+      <span class="badge live">LIVE</span>
+      <div class="lang-switch">
+        <button class="lang-btn active" onclick="setLang('ms',this)">BM</button>
+        <button class="lang-btn" onclick="setLang('en',this)">EN</button>
+      </div>
+      <span class="clock" id="clock">--:--:--</span>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar"></aside>
+  <main class="content" id="content"></main>
+</div>
+
+<div id="toolbar">
+  <button class="fab" onclick="openSearch()" title="Carian (Ctrl+K)"><i class="fas fa-search"></i></button>
+  <button class="fab" onclick="toggleTheme()" title="Tema"><i class="fas fa-moon"></i></button>
+  <button class="fab" onclick="openQR()" title="QR Code"><i class="fas fa-qrcode"></i></button>
+  <button class="fab" onclick="openAI()" title="AI Assistant"><i class="fas fa-robot"></i></button>
+  <button class="fab" onclick="exportJSON()" title="Export JSON"><i class="fas fa-download"></i></button>
+</div>
+
+<div id="ticker"><div class="ticker-track" id="ticker-track"></div></div>
+
+<div class="modal" id="search-modal" onclick="if(event.target===this)closeSearch()">
+  <div class="modal-box">
+    <div class="modal-title"><span>🔍 Carian Global</span><button class="modal-close" onclick="closeSearch()">×</button></div>
+    <input class="search-input" id="search-input" placeholder="Cari... (contoh: insurans, bitcoin, kedah, api)" oninput="runSearch(this.value)" autofocus>
+    <div class="search-results" id="search-results"></div>
+  </div>
+</div>
+
+<div class="modal" id="qr-modal" onclick="if(event.target===this)closeQR()">
+  <div class="modal-box" style="text-align:center;max-width:400px">
+    <div class="modal-title"><span>📱 QR Code</span><button class="modal-close" onclick="closeQR()">×</button></div>
+    <div id="qr-target" style="background:#FFF;padding:16px;border-radius:12px;display:inline-block;margin:8px 0;min-width:220px;min-height:220px"></div>
+    <div id="qr-desc" style="font-size:10px;color:var(--muted);font-family:monospace;word-break:break-all;margin-top:8px"></div>
+  </div>
+</div>
+
+<div class="modal" id="ai-modal" onclick="if(event.target===this)closeAI()">
+  <div class="modal-box" style="max-width:520px;display:flex;flex-direction:column;max-height:80vh">
+    <div class="modal-title"><span>🤖 AI Assistant</span><button class="modal-close" onclick="closeAI()">×</button></div>
+    <div id="ai-messages" style="flex:1;overflow-y:auto;padding:8px 0;display:flex;flex-direction:column;gap:8px;min-height:200px;max-height:400px"></div>
+    <div style="display:flex;gap:6px;padding-top:8px;border-top:1px solid var(--border)">
+      <input class="search-input" id="ai-input" placeholder="Tanya: GRAN? Insurans? Crypto?" onkeydown="if(event.key==='Enter')askAI()" style="flex:1">
+      <button class="action" onclick="askAI()" style="width:auto;padding:12px 16px;flex-shrink:0;border-color:var(--cyan);color:var(--cyan)"><i class="fas fa-paper-plane"></i></button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// CONSTANTS
+// ============================================================
+const MSI = 'MSI-2026-07734';
+const HASH = '32D8A53CC4C299E60424C0D0E96D3B06575D51';
+const NATO = 'NATO/CTS-MY-7734';
+const SOVEREIGN = 'SOVEREIGN-7734';
+
+// ============================================================
+// ALL DATA (35+ modules)
+// ============================================================
+const DATA = {
+  owner: {
+    name:'MUHAMAD SAZWAN BIN ISMAIL', ic:'961022-02-5739', dob:'22.10.1996', pob:'Sungai Petani, Kedah',
+    mother:'Syarifah binti Ishak', father:'Ismail bin Hamid', email:'xxsazend12345@gmail.com',
+    phone:'+60162847180', role:'Founder & CEO · Sazwan Digital Enterprise',
+    participant:'END-MYS-SAZWAN-96-0425', global:'1', military:'MY-ATM-CYBER/7734',
+    interpol:'IP-MY-7734-2026', clearance:'L04 · COSMIC TOP SECRET · TIER-1',
+    marital:'Bujang', spouse:'Tiada', blood:'O+', height:'178 cm', weight:'72 kg',
+    netWorth:'RM 3,182,796,638', ssm:'202403378912',
+    btcWallet:'1A1zP1eP5QGeFi2DMPTfTL5SLmv7DivfNa',
+    sha256:HASH, block:'847,995', warrant:'MY-ICC-2026/07734',
+    address:'F262 Kampung Pinang Tunggal, 08000 Sungai Petani, Kedah'
+  },
+  software: {
+    github:'@sazwan96', githubAlt:'@Sazwanismail', mainRepo:'Workflow-Fairbase',
+    repos:'47+', commits:'2,847+',
+    fairbase:{ name:'Fairbase Platform', function:'Data Security + Generative AI', location:'Sungai Petani, Kedah', status:'Beta Active' },
+    verification:{ sha256:'✓ Auto', signedCommits:'100% GPG', cicd:'GitHub Actions', sbom:'Weekly' },
+    infra:['Azure DevOps','Firebase Studio','Vercel','Docker Hub','GitHub Actions']
+  },
+  gran: [
+    { id:'GRAN-001', name:'Sazwan Digital Valley (HQ)', flag:'🇲🇾', country:'Malaysia', city:'Pinang Tunggal, Kedah', lat:5.6470, lng:100.4874, area:'2.5 Ha', value:'RM 13,100,000', type:'hq', cat:'GRAN Global' },
+    { id:'GRAN-002', name:'SGAE Data Center', flag:'🇲🇾', country:'Malaysia', city:'Sungai Petani', lat:5.6472, lng:100.4876, area:'2.0 Ha', value:'RM 4,500,000', type:'gran', cat:'GRAN Global' },
+    { id:'GRAN-003', name:'SGAE R&D Center', flag:'🇲🇾', country:'Malaysia', city:'Kulim Hi-Tech', lat:5.3700, lng:100.5600, area:'1.0 Ha', value:'RM 1,000,000', type:'gran', cat:'GRAN Global' },
+    { id:'GRAN-004', name:'SGAE APAC Hub', flag:'🇸🇬', country:'Singapore', city:'Marina Bay', lat:1.2830, lng:103.8607, area:'0.4 Ha', value:'RM 147,000,000', type:'gran', cat:'GRAN Global' },
+    { id:'GRAN-005', name:'SGAE Silicon Valley', flag:'🇺🇸', country:'USA', city:'Palo Alto, CA', lat:37.4419, lng:-122.1430, area:'0.8 Ha', value:'RM 131,600,000', type:'gran', cat:'GRAN Global' },
+    { id:'GRAN-006', name:'SGAE London FinTech', flag:'🇬🇧', country:'UK', city:'Canary Wharf', lat:51.5054, lng:-0.0235, area:'0.6 Ha', value:'RM 105,000,000', type:'gran', cat:'GRAN Global' },
+    { id:'GRAN-007', name:'SGAE Middle East Hub', flag:'🇦🇪', country:'UAE', city:'Dubai Marina', lat:25.0805, lng:55.1403, area:'1.2 Ha', value:'RM 102,000,000', type:'gran', cat:'GRAN Global' },
+    { id:'GRAN-008', name:'SGAE Tokyo AI Lab', flag:'🇯🇵', country:'Japan', city:'Shibuya, Tokyo', lat:35.6762, lng:139.6503, area:'0.5 Ha', value:'RM 74,000,000', type:'gran', cat:'GRAN Global' },
+    { id:'GRAN-009', name:'SGAE Crypto Vault', flag:'🇨🇭', country:'Switzerland', city:'Zug', lat:47.1662, lng:8.5155, area:'0.3 Ha', value:'RM 63,000,000', type:'gran', cat:'GRAN Global' },
+    { id:'GRAN-010', name:'SGAE Sydney DC', flag:'🇦🇺', country:'Australia', city:'Alexandria, Sydney', lat:-33.9026, lng:151.1945, area:'1.5 Ha', value:'RM 74,000,000', type:'gran', cat:'GRAN Global' },
+    { id:'GRAN-011', name:'SGAE e-Residency HQ', flag:'🇪🇪', country:'Estonia', city:'Tallinn', lat:59.4370, lng:24.7536, area:'0.2 Ha', value:'RM 21,000,000', type:'gran', cat:'GRAN Global' },
+    { id:'GRAN-012', name:'SGAE NEOM Node', flag:'🇸🇦', country:'Saudi Arabia', city:'NEOM, Tabuk', lat:28.0000, lng:35.0000, area:'38.7 Ha', value:'RM 148,000,000', type:'gran', cat:'GRAN Global' },
+    { id:'AI-001', name:'Kedah AI Nexus', flag:'🇲🇾', country:'Malaysia', city:'Sungai Petani, Kedah', lat:5.6236, lng:100.5385, area:'-', value:'-', type:'ai', cat:'GRAN Global' },
+    { id:'MYLOT-REF', name:'MyLot Reference (KL)', flag:'🇲🇾', country:'Malaysia', city:'Kuala Lumpur', lat:3.1390, lng:101.6869, area:'-', value:'-', type:'ai', cat:'GRAN Global' }
+  ],
+  datacenters: [
+    { id:'DC-KDH-01', name:'Kedah DC', flag:'🇲🇾', country:'Malaysia', city:'Kedah', lat:5.6470, lng:100.4874, info:'Tier-3 · 2,400 racks · 42 MW', cat:'Data Centers' },
+    { id:'DC-KUL-01', name:'KL DC', flag:'🇲🇾', country:'Malaysia', city:'Kuala Lumpur', lat:3.1390, lng:101.6869, info:'Tier-4 · 1,200 racks · 24 MW', cat:'Data Centers' },
+    { id:'DC-SG-01', name:'Singapore DC', flag:'🇸🇬', country:'Singapore', city:'Singapore', lat:1.2830, lng:103.8607, info:'Tier-4 · 800 racks · 18 MW', cat:'Data Centers' },
+    { id:'DC-JB-01', name:'Johor DC', flag:'🇲🇾', country:'Malaysia', city:'Johor Bahru', lat:1.4927, lng:103.7414, info:'Tier-3 · 1,500 racks · 28 MW', cat:'Data Centers' },
+    { id:'DC-SV-01', name:'Silicon Valley DC', flag:'🇺🇸', country:'USA', city:'Silicon Valley', lat:37.4419, lng:-122.1430, info:'Tier-4 · 600 racks · 15 MW', cat:'Data Centers' },
+    { id:'DC-LDN-01', name:'London DC', flag:'🇬🇧', country:'UK', city:'London', lat:51.5054, lng:-0.0235, info:'Tier-3 · 400 racks · 12 MW', cat:'Data Centers' },
+    { id:'DC-DXB-01', name:'Dubai DC', flag:'🇦🇪', country:'UAE', city:'Dubai', lat:25.0805, lng:55.1403, info:'Tier-3 · 500 racks · 15 MW', cat:'Data Centers' },
+    { id:'DC-TYO-01', name:'Tokyo DC', flag:'🇯🇵', country:'Japan', city:'Tokyo', lat:35.6762, lng:139.6503, info:'Tier-4 · 400 racks · 12 MW', cat:'Data Centers' },
+    { id:'DC-ZRH-01', name:'Zurich DC', flag:'🇨🇭', country:'Switzerland', city:'Zurich', lat:47.3769, lng:8.5417, info:'Tier-4 · 300 racks · 10 MW', cat:'Data Centers' },
+    { id:'DC-SYD-01', name:'Sydney DC', flag:'🇦🇺', country:'Australia', city:'Sydney', lat:-33.9026, lng:151.1945, info:'Tier-3 · 500 racks · 14 MW', cat:'Data Centers' },
+    { id:'DC-TLL-01', name:'Tallinn DC', flag:'🇪🇪', country:'Estonia', city:'Tallinn', lat:59.4370, lng:24.7536, info:'Tier-3 · 200 racks · 6 MW', cat:'Data Centers' },
+    { id:'DC-NEOM-01', name:'NEOM DC', flag:'🇸🇦', country:'Saudi Arabia', city:'NEOM', lat:28.0000, lng:35.0000, info:'Tier-3 · 100 racks · 4 MW', cat:'Data Centers' }
+  ],
+  pops: [
+    { id:'PoP-KUL', name:'Kuala Lumpur', flag:'🇲🇾', country:'Malaysia', lat:3.1390, lng:101.6869, info:'10 Tbps', cat:'PoPs' },
+    { id:'PoP-SIN', name:'Singapore', flag:'🇸🇬', country:'Singapore', lat:1.2830, lng:103.8607, info:'10 Tbps', cat:'PoPs' },
+    { id:'PoP-HKG', name:'Hong Kong', flag:'🇭🇰', country:'Hong Kong', lat:22.3193, lng:114.1694, info:'5 Tbps', cat:'PoPs' },
+    { id:'PoP-TYO', name:'Tokyo', flag:'🇯🇵', country:'Japan', lat:35.6762, lng:139.6503, info:'10 Tbps', cat:'PoPs' },
+    { id:'PoP-SYD', name:'Sydney', flag:'🇦🇺', country:'Australia', lat:-33.9026, lng:151.1945, info:'5 Tbps', cat:'PoPs' },
+    { id:'PoP-LAX', name:'Los Angeles', flag:'🇺🇸', country:'USA', lat:34.0522, lng:-118.2437, info:'10 Tbps', cat:'PoPs' },
+    { id:'PoP-NYC', name:'New York', flag:'🇺🇸', country:'USA', lat:40.7128, lng:-74.0060, info:'10 Tbps', cat:'PoPs' },
+    { id:'PoP-LON', name:'London', flag:'🇬🇧', country:'UK', lat:51.5054, lng:-0.0235, info:'10 Tbps', cat:'PoPs' },
+    { id:'PoP-FRA', name:'Frankfurt', flag:'🇩🇪', country:'Germany', lat:50.1109, lng:8.6821, info:'5 Tbps', cat:'PoPs' },
+    { id:'PoP-AMS', name:'Amsterdam', flag:'🇳🇱', country:'Netherlands', lat:52.3676, lng:4.9041, info:'5 Tbps', cat:'PoPs' },
+    { id:'PoP-DXB', name:'Dubai', flag:'🇦🇪', country:'UAE', lat:25.0805, lng:55.1403, info:'5 Tbps', cat:'PoPs' },
+    { id:'PoP-ZRH', name:'Zurich', flag:'🇨🇭', country:'Switzerland', lat:47.3769, lng:8.5417, info:'5 Tbps', cat:'PoPs' },
+    { id:'PoP-BOM', name:'Mumbai', flag:'🇮🇳', country:'India', lat:19.0760, lng:72.8777, info:'5 Tbps', cat:'PoPs' },
+    { id:'PoP-SAO', name:'São Paulo', flag:'🇧🇷', country:'Brazil', lat:-23.5505, lng:-46.6333, info:'2 Tbps', cat:'PoPs' }
+  ],
+  groundStations: [
+    { id:'GS-01', name:'Ground Station Kedah', flag:'🇲🇾', country:'Malaysia', city:'Kedah', lat:5.6470, lng:100.4874, info:'6.5m dish · Ka/X/Ku/L', cat:'Ground Stations' },
+    { id:'GS-02', name:'Ground Station Singapore', flag:'🇸🇬', country:'Singapore', city:'Singapore', lat:1.2830, lng:103.8607, info:'4.5m dish · Ka/X/Ku', cat:'Ground Stations' },
+    { id:'GS-03', name:'Ground Station Dubai', flag:'🇦🇪', country:'UAE', city:'Dubai', lat:25.0805, lng:55.1403, info:'5.0m dish · Ka/X', cat:'Ground Stations' },
+    { id:'GS-04', name:'Ground Station Tokyo', flag:'🇯🇵', country:'Japan', city:'Tokyo', lat:35.6762, lng:139.6503, info:'4.2m dish · Ka/Ku', cat:'Ground Stations' },
+    { id:'GS-05', name:'Ground Station London', flag:'🇬🇧', country:'UK', city:'London', lat:51.5054, lng:-0.0235, info:'4.8m dish · Ka/X', cat:'Ground Stations' },
+    { id:'GS-06', name:'Ground Station Sydney', flag:'🇦🇺', country:'Australia', city:'Sydney', lat:-33.9026, lng:151.1945, info:'4.0m dish · X/Ku', cat:'Ground Stations' }
+  ],
+  offices: [
+    { id:'OFF-KDH', name:'HQ Kedah', flag:'🇲🇾', country:'Malaysia', city:'Sungai Petani', lat:5.6470, lng:100.4874, info:'+604-4284-7734', cat:'Company Offices' },
+    { id:'OFF-KUL', name:'KL Tower Office', flag:'🇲🇾', country:'Malaysia', city:'Kuala Lumpur', lat:3.1390, lng:101.6869, info:'+603-2284-7734', cat:'Company Offices' },
+    { id:'OFF-PNG', name:'Penang Tech', flag:'🇲🇾', country:'Malaysia', city:'Penang', lat:5.4141, lng:100.3288, info:'+604-2284-7738', cat:'Company Offices' },
+    { id:'OFF-JB', name:'Johor DC', flag:'🇲🇾', country:'Malaysia', city:'Johor Bahru', lat:1.4927, lng:103.7414, info:'+607-2284-7739', cat:'Company Offices' },
+    { id:'OFF-SG', name:'Singapore Office', flag:'🇸🇬', country:'Singapore', city:'Singapore', lat:1.2830, lng:103.8607, info:'+65-6284-8800', cat:'Company Offices' },
+    { id:'OFF-US', name:'USA Office', flag:'🇺🇸', country:'USA', city:'Palo Alto', lat:37.4419, lng:-122.1430, info:'+1-650-284-4400', cat:'Company Offices' },
+    { id:'OFF-UK', name:'UK Office', flag:'🇬🇧', country:'UK', city:'London', lat:51.5054, lng:-0.0235, info:'+44-20-2844-3300', cat:'Company Offices' },
+    { id:'OFF-AE', name:'UAE Office', flag:'🇦🇪', country:'UAE', city:'Dubai', lat:25.0805, lng:55.1403, info:'+971-4-284-2200', cat:'Company Offices' },
+    { id:'OFF-JP', name:'Japan Office', flag:'🇯🇵', country:'Japan', city:'Tokyo', lat:35.6762, lng:139.6503, info:'+81-3-2844-1100', cat:'Company Offices' },
+    { id:'OFF-CH', name:'Switzerland Office', flag:'🇨🇭', country:'Switzerland', city:'Zug', lat:47.1662, lng:8.5155, info:'+41-41-284-9900', cat:'Company Offices' },
+    { id:'OFF-AU', name:'Australia Office', flag:'🇦🇺', country:'Australia', city:'Sydney', lat:-33.9026, lng:151.1945, info:'+61-2-2844-6600', cat:'Company Offices' },
+    { id:'OFF-EE', name:'Estonia Office', flag:'🇪🇪', country:'Estonia', city:'Tallinn', lat:59.4370, lng:24.7536, info:'+372-284-5500', cat:'Company Offices' },
+    { id:'OFF-SA', name:'Saudi Office', flag:'🇸🇦', country:'Saudi Arabia', city:'NEOM', lat:28.0000, lng:35.0000, info:'+966-11-284-7700', cat:'Company Offices' }
+  ],
+  ipintel: [
+    { id:'IP-KUL', name:'IP: 103.28.14.55', flag:'🇲🇾', country:'Malaysia', city:'Kuala Lumpur', lat:3.1390, lng:101.6869, info:'AS4788 TM Net · Risk LOW', cat:'IP Intel' },
+    { id:'IP-SG', name:'IP: 45.132.192.8', flag:'🇸🇬', country:'Singapore', city:'Singapore', lat:1.2830, lng:103.8607, info:'AS13335 Cloudflare · LOW', cat:'IP Intel' },
+    { id:'IP-SF', name:'IP: 104.28.16.42', flag:'🇺🇸', country:'USA', city:'San Francisco', lat:37.7749, lng:-122.4194, info:'AS13335 Cloudflare · LOW', cat:'IP Intel' },
+    { id:'IP-FRA', name:'IP: 185.220.101.7', flag:'🇩🇪', country:'Germany', city:'Frankfurt', lat:50.1109, lng:8.6821, info:'AS205100 Tor · HIGH', cat:'IP Intel' },
+    { id:'IP-AMS', name:'IP: 198.98.53.12', flag:'🇳🇱', country:'Netherlands', city:'Amsterdam', lat:52.3676, lng:4.9041, info:'AS9009 M247 · MEDIUM', cat:'IP Intel' },
+    { id:'IP-MOS', name:'IP: 45.155.205.14', flag:'🇷🇺', country:'Russia', city:'Moscow', lat:55.7558, lng:37.6173, info:'AS49505 Selectel · HIGH', cat:'IP Intel' },
+    { id:'IP-HAN', name:'IP: 113.161.72.9', flag:'🇻🇳', country:'Vietnam', city:'Hanoi', lat:21.0285, lng:105.8542, info:'AS45899 VNPT · MEDIUM', cat:'IP Intel' },
+    { id:'IP-KDH', name:'IP: 203.0.113.5', flag:'🇲🇾', country:'Malaysia', city:'Kedah', lat:5.6470, lng:100.4874, info:'AS4788 TM Net · LOW', cat:'IP Intel' }
+  ],
+  addresses: [
+    { id:'ADR-001', name:'Primary Residence', flag:'🇲🇾', country:'Malaysia', city:'Sungai Petani', lat:5.6400, lng:100.4800, info:'No. 77, Jalan Sazwan Digital', cat:'Addresses' },
+    { id:'ADR-002', name:'Kedah HQ', flag:'🇲🇾', country:'Malaysia', city:'Pinang Tunggal', lat:5.6470, lng:100.4874, info:'Sazwan Digital Valley, 08000', cat:'Addresses' },
+    { id:'ADR-003', name:'KL Tower Office', flag:'🇲🇾', country:'Malaysia', city:'Kuala Lumpur', lat:3.1390, lng:101.6869, info:'Level 42, KL Tower, 50250', cat:'Addresses' },
+    { id:'ADR-004', name:'Singapore Address', flag:'🇸🇬', country:'Singapore', city:'Singapore', lat:1.2830, lng:103.8607, info:'Marina Bay Financial Centre', cat:'Addresses' },
+    { id:'ADR-005', name:'Palo Alto Address', flag:'🇺🇸', country:'USA', city:'Palo Alto', lat:37.4419, lng:-122.1430, info:'530 Lytton Ave, CA 94301', cat:'Addresses' },
+    { id:'ADR-006', name:'London Address', flag:'🇬🇧', country:'UK', city:'London', lat:51.5054, lng:-0.0235, info:'One Canada Square, E14 5AB', cat:'Addresses' },
+    { id:'ADR-007', name:'Dubai Address', flag:'🇦🇪', country:'UAE', city:'Dubai', lat:25.0805, lng:55.1403, info:'Marina Plaza, Dubai Marina', cat:'Addresses' },
+    { id:'ADR-008', name:'Tokyo Address', flag:'🇯🇵', country:'Japan', city:'Tokyo', lat:35.6762, lng:139.6503, info:'Shibuya Scramble Square', cat:'Addresses' },
+    { id:'ADR-009', name:'Zurich Address', flag:'🇨🇭', country:'Switzerland', city:'Zurich', lat:47.3769, lng:8.5417, info:'Bahnhofstrasse 42, 8001', cat:'Addresses' },
+    { id:'ADR-010', name:'Tallinn Address', flag:'🇪🇪', country:'Estonia', city:'Tallinn', lat:59.4370, lng:24.7536, info:'Ülemiste City, Valukoja 8', cat:'Addresses' },
+    { id:'ADR-011', name:'Sydney Address', flag:'🇦🇺', country:'Australia', city:'Sydney', lat:-33.9026, lng:151.1945, info:'60 Margaret St, NSW 2000', cat:'Addresses' },
+    { id:'ADR-012', name:'NEOM Address', flag:'🇸🇦', country:'Saudi Arabia', city:'NEOM', lat:28.0000, lng:35.0000, info:'NEOM Industrial City', cat:'Addresses' }
+  ],
+  special: [
+    { id:'SPC-001', name:'NATO SHAPE Cyber', flag:'🇧🇪', country:'Belgium', city:'Mons', lat:50.4542, lng:3.9520, info:'NATO/CTS-MY-7734 · L04 COSMIC', cat:'Special', type:'verify' },
+    { id:'SPC-002', name:'MSI Technologies KL', flag:'🇲🇾', country:'Malaysia', city:'Bukit Jalil, KL', lat:3.0540, lng:101.6930, info:'No.13, Jalan 16/155c, 57000 KL', cat:'Special', type:'hardware' },
+    { id:'SPC-003', name:'MSI Pacific', flag:'🇲🇾', country:'Malaysia', city:'Petaling Jaya', lat:3.1073, lng:101.6067, info:'Petaling Jaya, Selangor', cat:'Special', type:'hardware' }
+  ],
+  insurance: [
+    ['INS-001','Nyawa','Great Eastern LifeSecure','Great Eastern','RM 5,000,000','2046-01-15'],
+    ['INS-002','Nyawa','Prudential PRUMillion','Prudential','RM 3,000,000','2046-03-20'],
+    ['INS-003','Nyawa','AIA A-Life Signature','AIA','RM 2,000,000','2050-01-10'],
+    ['INS-004','Perubatan','Prudential PRUHealth','Prudential','RM 2,000,000','2027-01-15'],
+    ['INS-005','Perubatan','AIA A-Plus Med','AIA','RM 1,500,000','2027-06-01'],
+    ['INS-006','Kritikal','AIA Critical Illness','AIA','RM 1,000,000','2036-06-15'],
+    ['INS-007','PA','Allianz PA','Allianz','RM 500,000','2026-12-31'],
+    ['INS-008','Kediaman','MSIG HomeSafe','MSIG','RM 2,500,000','2027-06-01'],
+    ['INS-009','Kenderaan','Zurich Comprehensive','Zurich','RM 180,000','2026-11-15'],
+    ['INS-010','Perniagaan','Tokio Marine Business','Tokio Marine','RM 20,000,000','2027-01-01'],
+    ['INS-011','Siber','AXA XL Cyber','AXA XL','RM 10,000,000','2027-03-01'],
+    ['INS-012','Kripto',"Lloyd's Crypto",'Lloyds','RM 50,000,000','2027-06-30'],
+    ['INS-013','Key Person','AIA Key Person','AIA','RM 15,000,000','2034-01-15']
+  ],
+  vehicles: [
+    ['VEH-001','Kereta','Toyota Alphard Vellfire','2024','WXX 7734 A','RM 550,000'],
+    ['VEH-002','Kereta','Mercedes S580','2024','WYY 7734 B','RM 1,250,000'],
+    ['VEH-003','SUV','BMW X7','2023','WZZ 7734 C','RM 780,000'],
+    ['VEH-004','Sports','Porsche 911 Turbo S','2024','WAA 7734 D','RM 1,850,000'],
+    ['VEH-005','EV','Tesla Model S Plaid','2024','WBB 7734 E','RM 620,000'],
+    ['VEH-006','SUV','Range Rover Autobiography','2024','WCC 7734 F','RM 1,400,000'],
+    ['VEH-007','Motor','Honda CBR1000RR-R','2023','WFF 7734 I','RM 120,000'],
+    ['VEH-008','Motor','Yamaha YZF-R1M','2024','WGG 7734 J','RM 145,000'],
+    ['VEH-009','Pesawat','Gulfstream G650ER','2023','9M-SZW','RM 250,000,000'],
+    ['VEH-010','Helikopter','Airbus H175 VIP','2023','9M-SZA','RM 65,000,000'],
+    ['VEH-011','Yacht','Princess X95','2024','9M-SZY','RM 180,000,000']
+  ],
+  health: [
+    ['Fizikal','Tinggi','178 cm','Normal'],['Fizikal','Berat','72 kg','Normal'],['Fizikal','BMI','22.7','Normal'],
+    ['Vital','Tekanan Darah','120/80','Normal'],['Vital','Kadar Nadi','68 bpm','Normal'],
+    ['Darah','Kumpulan','O+','Universal Donor'],['Darah','Hemoglobin','15.2 g/dL','Normal'],
+    ['Kimia','Kolesterol','4.2 mmol/L','Normal'],['Kimia','Gula Darah','4.8 mmol/L','Normal'],
+    ['Penglihatan','Kiri','20/20','Sempurna'],['Penglihatan','Kanan','20/20','Sempurna'],
+    ['Alahan','Alahan','Tiada','Clear'],['Kronik','Penyakit','Tiada','Clear'],
+    ['Gaya Hidup','Rokok','Tidak','Bebas'],['Gaya Hidup','Alkohol','Tidak','Bebas'],
+    ['Gaya Hidup','Senaman','5x/minggu','Aktif'],['Gaya Hidup','Tidur','7-8 jam/hari','Optimal']
+  ],
+  education: [
+    ['EDU-001','Sekolah Rendah','SK Sungai Petani','2003-2008','UPSR','5A'],
+    ['EDU-002','Menengah','SMK Sungai Petani','2009-2013','SPM','9A'],
+    ['EDU-003','Matrikulasi','Kolej Matrikulasi Kedah','2014-2015','Matrikulasi','CGPA 3.92'],
+    ['EDU-004','Sarjana Muda','Universiti Malaya','2015-2018','Sains Komputer','CGPA 3.88 (First Class)'],
+    ['EDU-005','Sarjana','Universiti Malaya','2018-2020','AI','CGPA 3.95'],
+    ['EDU-006','PhD','Universiti Malaya','2020-2023','Sains Komputer (AI)','Distinction'],
+    ['EDU-007','Sijil','MIT (Online)','2021','Blockchain','Completed'],
+    ['EDU-008','Sijil','Stanford (Online)','2022','ML Specialization','Completed'],
+    ['EDU-009','Sijil','Oxford (Online)','2023','AI Programme','Completed'],
+    ['EDU-010','Sijil','Harvard (Online)','2019','CS50x','Completed']
+  ],
+  career: [
+    ['2018-2019','Junior Software Engineer','Grab Malaysia','KL','RM 4,800/bln'],
+    ['2019-2020','Senior Software Engineer','Grab Malaysia','KL','RM 8,500/bln'],
+    ['2020-2021','Lead AI Engineer','MDEC','Cyberjaya','RM 12,000/bln'],
+    ['2021-2022','Chief Technology Officer','Axiata Digital','KL','RM 22,000/bln'],
+    ['2022-2023','VP Engineering','Grab Holdings','Singapore','SGD 12,000/bln'],
+    ['2023-2024','Chief AI Officer','End AI Global','KL','RM 45,000/bln'],
+    ['2024-Kini','Founder & CEO','Sazwan Digital Enterprise','Kedah','Revenue RM 3.847M']
+  ],
+  contacts: {
+    primary:[['Email','xxsazend12345@gmail.com'],['Phone','+60162847180'],['WhatsApp','+60162847180']],
+    social:[['LinkedIn','linkedin.com/in/sazwan96'],['Twitter','@sazwan96'],['GitHub','github.com/sazwan96'],['Telegram','@Sazwan96']],
+    emergency:[['CEO','+6016-284-7734','< 5 min'],['Cyber','+603-2284-9911','< 2 min'],['Physical','+603-2284-9912','< 3 min'],['Fire','+603-2284-9913','< 2 min'],['Medical','+603-2284-9914','< 5 min']]
+  },
+  banks: [
+    ['Maybank Islamic','4632 2520 0182 477','RM 2,847,291'],
+    ['CIMB Bank','5196 0322 1511 5011','RM 4,291,847'],
+    ['Bank Rakyat','1122 3344 5566 77','RM 2,847,192'],
+    ['Public Bank','3142 8855 1234','RM 1,247,891'],
+    ['Hong Leong','0280 0123 4567','RM 842,718']
+  ],
+  crypto: [
+    {sym:'BTC',name:'Bitcoin',amount:'4,050',price:'$64,104.80',value:'$259,624,440',change:'+2.34%'},
+    {sym:'ETH',name:'Ethereum',amount:'2,847.5',price:'$1,886.89',value:'$5,373,240',change:'-0.65%'},
+    {sym:'S256c',name:'SGAE Sovereign',amount:'12,847,291',price:'$42.80',value:'$549,864,054',change:'+8.42%'},
+    {sym:'USDT',name:'Tether',amount:'1,847,293',price:'$1.00',value:'$1,847,293',change:'+0.01%'},
+    {sym:'SOL',name:'Solana',amount:'12,480.5',price:'$142.30',value:'$1,776,000',change:'+3.47%'},
+    {sym:'USDC',name:'USD Coin',amount:'1,247,891',price:'$1.00',value:'$1,247,891',change:'0.00%'}
+  ],
+  myipo: {
+    patents:[['PI-2026-07734','AI Sovereignty Core Engine','DILULUSKAN'],['PI-2026-07735','Quantum-Safe Cryptography','DILULUSKAN'],['PI-2026-07736','Sovereign Ledger Protocol','DILULUSKAN'],['PI-2026-07737','Neural Network Zero-Trust','DILULUSKAN'],['PI-2026-07738','Drone Command Protocol','DILULUSKAN'],['PI-2026-07739','Federated Learning Security','DILULUSKAN']],
+    trademarks:[['TM-2026-07734','SGAE 2.0 MASTER'],['TM-2026-07735','SAZWAN OS'],['TM-2026-07736','END AI GLOBAL'],['TM-2026-07737','CYBER RANGER'],['TM-2026-07738','SOVEREIGN LEDGER'],['TM-2026-07739','GEOBOT AI'],['TM2024-04522','SGAE Jenama']],
+    copyrights:[['CR-2026-07734','SGAE Source Code'],['CR-2026-07735','AI Sovereignty Framework'],['CR-2026-07736','Quantum Algorithm Library'],['CR-2026-07737','Sovereign Identity Protocol'],['CR-2026-07738','SGAE Security Framework'],['CR-2026-07739','Zero Trust Architecture'],['CR-2026-07740','API Documentation'],['LY2024-00817','Digital Copyright']],
+    gi:[['GI-2026-07734','Digital Sovereignty Index'],['GI-2026-07735','SGAE Global Footprint'],['GI-2026-07736','ASEAN AI Governance'],['GI-2026-07737','Cyber Resilience Index'],['GI-2026-07738','Blockchain Trust Score'],['GI-2026-07740','Sazwan Digital Valley'],['GI-2026-07741','Kedah AI Nexus'],['GI-2026-07739','Quantum-Safe Ecosystem']]
+  },
+  certs: [
+    [1,'Google Professional ML Engineer','Google Cloud'],[2,'AWS Certified AI & ML','AWS'],
+    [11,'CISSP','ISC²'],[12,'CompTIA Security+','CompTIA'],[13,'CEH v12','EC-Council'],
+    [21,'CBSP','Blockchain Council'],[31,'Azure Solutions Architect','Microsoft'],
+    [41,'PMP','PMI'],[44,'OSCP','OffSec'],[51,'Google Data Engineer','Google Cloud'],
+    [61,'AWS Solutions Architect Pro','AWS'],[72,'Google Cloud Architect','Google Cloud'],
+    [78,'Kubernetes Admin','CNCF'],[96,'Blockchain Expert','Blockchain Council'],
+    [136,'CCIE Security','Cisco'],[193,'ATM Cyber Operations','Angkatan Tentera Malaysia'],
+    [195,'NATO Secret Clearance','NATO']
+  ],
+  countries: [
+    ['MY','Malaysia','🇲🇾','ASEAN','Utama'],['SG','Singapore','🇸🇬','ASEAN','Partner'],
+    ['ID','Indonesia','🇮🇩','ASEAN','Partner'],['TH','Thailand','🇹🇭','ASEAN','Partner'],
+    ['VN','Vietnam','🇻🇳','ASEAN','Partner'],['PH','Philippines','🇵🇭','ASEAN','Partner'],
+    ['CN','China','🇨🇳','Asia','MoU'],['JP','Japan','🇯🇵','Asia','MoU'],
+    ['KR','Korea','🇰🇷','Asia','MoU'],['IN','India','🇮🇳','Asia','Partner'],
+    ['US','USA','🇺🇸','N.America','MoU'],['GB','UK','🇬🇧','Europe','MoU'],
+    ['DE','Germany','🇩🇪','Europe','Partner'],['FR','France','🇫🇷','Europe','Partner'],
+    ['AE','UAE','🇦🇪','ME','MoU'],['SA','Saudi','🇸🇦','ME','MoU'],
+    ['AU','Australia','🇦🇺','Oceania','Partner'],['BR','Brazil','🇧🇷','S.America','Partner']
+  ],
+  threat: {
+    apts:[['APT-28','Fancy Bear','🇷🇺','CRITICAL'],['APT-29','Cozy Bear','🇷🇺','CRITICAL'],['APT-41','Double Dragon','🇨🇳','CRITICAL'],['Lazarus','Hidden Cobra','🇰🇵','CRITICAL'],['Sandworm','Voodoo Bear','🇷🇺','CRITICAL'],['REvil','Sodinokibi','🇷🇺','CRITICAL'],['Conti','Ransomware','🇷🇺','CRITICAL'],['APT-33','Elfin','🇮🇷','HIGH']],
+    cves:[['CVE-2026-42847','Apache RCE','9.8','CRITICAL'],['CVE-2026-42848','OpenSSL DoS','8.2','HIGH'],['CVE-2026-42849','Linux Kernel','7.8','HIGH'],['CVE-2026-42850','Chrome Zero-day','9.1','CRITICAL']]
+  },
+  security:[['WAF','142 rules','ACTIVE'],['DDoS Shield','Cloudflare','ACTIVE'],['Zero Trust','84 policies','ACTIVE'],['MFA','TOTP+HW','ENFORCED'],['Encryption','AES-256-GCM','ACTIVE'],['TLS 1.3','PFS','ACTIVE'],['Post-Quantum','Kyber+Dilithium','ACTIVE'],['SHA-256','Blockchain','VERIFIED'],['SOC 2','Deloitte','CERTIFIED'],['ISO 27001','BSI','CERTIFIED']],
+  satellites:[['SGAE-SAT-01','GEO 42.1°E','Ka','96%','Comms'],['SGAE-SAT-02','LEO 550km','X','92%','Imaging'],['SGAE-SAT-03','MEO 20,200km','Ku','88%','Nav'],['SGAE-SAT-04','GEO 118°E','Ka','94%','SIGINT'],['SGAE-SAT-05','LEO 480km','X','90%','Imaging'],['SGAE-SAT-06','SSO 700km','L','97%','IoT']],
+  network:{dc:[
+    ['DC-KDH-01','Kedah','🇲🇾','Tier-3','2,400','42 MW'],['DC-KUL-01','KL','🇲🇾','Tier-4','1,200','24 MW'],
+    ['DC-SG-01','Singapore','🇸🇬','Tier-4','800','18 MW'],['DC-JB-01','Johor','🇲🇾','Tier-3','1,500','28 MW'],
+    ['DC-SV-01','Silicon Valley','🇺🇸','Tier-4','600','15 MW'],['DC-LDN-01','London','🇬🇧','Tier-3','400','12 MW'],
+    ['DC-DXB-01','Dubai','🇦🇪','Tier-3','500','15 MW'],['DC-TYO-01','Tokyo','🇯🇵','Tier-4','400','12 MW'],
+    ['DC-ZRH-01','Zurich','🇨🇭','Tier-4','300','10 MW'],['DC-SYD-01','Sydney','🇦🇺','Tier-3','500','14 MW'],
+    ['DC-TLL-01','Tallinn','🇪🇪','Tier-3','200','6 MW'],['DC-NEOM-01','NEOM','🇸🇦','Tier-3','100','4 MW']
+  ]},
+  quantum:{qubits:1024,coherence:'98.7%',fidelity:'99.4%',key:'QKD-MY-7734-CRYSTAL',algos:[["Shor's",'Factoring','Active'],["Grover's",'Search','Active'],['BB84 QKD','Key Dist','Active'],['E91','Entanglement','Standby'],['VQE','Eigensolver','Active'],['QAOA','Optimization','Active']]},
+  finance:{
+    revenue:'RM 3,847,000',ebitda:'RM 2,115,000',net:'RM 1,608,000',assets:'RM 3,182,796,638',
+    pl:[['Revenue','3,847,000','2,694,000','+42.8%'],['COGS','(1,062,000)','(789,000)','+34.6%'],['Gross Profit','2,785,000','1,905,000','+46.2%'],['EBITDA','2,115,000','1,440,000','+46.9%'],['Net Profit','1,608,000','1,125,000','+42.9%']],
+    globalAssets:[['GRAN Tanah (12 lot)','RM 284,600,000'],['GRAN Global (12 lot)','RM 884,200,000'],['BTC Holdings','RM 1,217,737,500'],['ETH Holdings','RM 22,500,000'],['S256c Treasury','RM 84,200,000'],['Real Estate','RM 42,000,000'],['Vehicles','RM 538,420,000'],['Cash','RM 24,847,291'],['Investments','RM 84,291,847'],['Total Assets','RM 3,182,796,638']],
+    projections:[[2026,'3,847,000','+42.8%'],[2027,'5,920,000','+53.9%'],[2028,'9,240,000','+56.1%'],[2029,'14,850,000','+60.7%'],[2030,'24,200,000','+62.9%']]
+  },
+  bigquery:{tables:37,size:'4.7 TB',list:[['identity_master','1','0.5 MB'],['certificates_global','245','12.3 MB'],['countries_205','205','8.7 MB'],['myipo_registrations','34','2.1 MB'],['gran_lots','24','2.6 MB'],['insurance_policies','13','0.9 MB'],['vehicles_full','11','0.7 MB'],['crypto_transactions','12,847,291','1.2 GB'],['ai_predictions','1,200,000,000','1.9 TB'],['threat_iocs','1,284,000','1.2 GB'],['satellite_imagery','1,428,000','842 GB'],['financial_ledger','48,291','2.4 GB']]},
+  pow:{algorithm:'SHA-256',blockHeight:'847,995',blockchain:'Bitcoin',difficulty:'84.42 T',hashRate:'684.42 EH/s',totalValue:'4,050 BTC'},
+  s256c:{symbol:'S256c',supply:'21,000,000',circulating:'18,472,847',holders:'4,847,291',priceUSD:'$42.80',marketCap:'$790.6M',tokenomics:[['Mining','50%','10,500,000'],['Team','15%','3,150,000'],['Dev','12%','2,520,000'],['Ecosystem','10%','2,100,000'],['Marketing','8%','1,680,000'],['Reserve','5%','1,050,000']],exchanges:[['Binance','$42.80','$24.4M'],['Coinbase','$42.82','$12.8M'],['Kraken','$42.78','$8.4M'],['OKX','$42.81','$6.2M'],['Bybit','$42.79','$4.8M']]},
+  ipo:{plan:'PRA-IPO FASA 2',size:'RM 120,000,000',pricePerShare:'RM 0.40',target:'Q4 2028',board:'ACE Market',preIpo:'RM 680,000,000',postIpo:'RM 800,000,000',sponsor:'Kenanga & RHB',proceeds:[['R&D','35%','RM 42M'],['Data Center','25%','RM 30M'],['GRAN Expansion','15%','RM 18M'],['Global','15%','RM 18M'],['Working Capital','10%','RM 12M']]},
+  domains:[['sazwan.com','.com','Cloudflare'],['sazwan.net','.net','Cloudflare'],['sazwan.org','.org','Cloudflare'],['sazwan.io','.io','Cloudflare'],['sgae.ai','.ai','Cloudflare'],['granglobal.com','.com','Cloudflare'],['sazwan96.github.io','github.io','GitHub']],
+  api:{total:42,calls24h:'42,847',websocket:4,groups:[
+    {name:'Ledger',count:5,endpoints:['/api/v1/ledger','/api/v1/ledger/transactions','/api/v1/ledger/blocks','/java/api/seizure','/java/api/asset/track']},
+    {name:'AI/Python',count:2,endpoints:['/python/ai/predict','/python/ai/train']},
+    {name:'Gemini Banking',count:2,endpoints:['/gemini/transfer/banking','/gemini/balance']},
+    {name:'FPX Payment',count:2,endpoints:['/fpx/payment','/fpx/status/{id}']},
+    {name:'Satellite',count:2,endpoints:['/satellite/telemetry','/satellite/orbits']},
+    {name:'Firebase',count:2,endpoints:['/firebase/data','/firebase/sync']},
+    {name:'Duniaku',count:2,endpoints:['/duniaku/transfer','/duniaku/balance']},
+    {name:'Weather',count:2,endpoints:['/weather/global','/weather/forecast/{city}']},
+    {name:'Sovereignty',count:2,endpoints:['/sovereignty/index','/sovereignty/metrics']},
+    {name:'BigData',count:2,endpoints:['/bigdata/analytics','/bigdata/datasets']},
+    {name:'GitLab',count:2,endpoints:['/gitlab/pipelines','/gitlab/commits']},
+    {name:'Verification',count:2,endpoints:['/v1/verify/END-MYS-SAZWAN-96-0425','/v1/verify/cert/{id}']},
+    {name:'Market Stream',count:3,endpoints:['/v4/shae/stream?symbol=BTCUSDT','/v4/shae/stream?symbol=ETHUSDT','/v4/shae/stream?symbol=MYRUSD']},
+    {name:'Cooperation',count:2,endpoints:['/v1/cooperation/205/countries','/v1/cooperation/agreements']},
+    {name:'Country Indicators',count:3,endpoints:['/v2/country/all/indicator/SOV.INDEX','/v2/country/{code}/emblem','/v2/country/{code}/flag']},
+    {name:'MyIPO',count:7,endpoints:['/myipo/registrations','/myipo/patents','/myipo/trademarks','/myipo/designs','/myipo/copyrights','/myipo/gi','/myipo/ipo']}
+  ]},
+  google:{services:[[1,'Search Console','sazwan.com','Indexed 287'],[2,'Analytics 4','G-1A2B3C4D5E','2,847 Events'],[3,'Workspace','admin@sazwan.com','Business Std'],[4,'Cloud Platform','sazwan-ai-sovereign-2026','5 Services'],[5,'Tag Manager','GTM-ABC123','47 Versions'],[6,'Firebase','sazwan-digital-profile','Real-time DB'],[7,'Google Finance','BTC/ETH/MYR','LIVE'],[8,'Google Wallet','Digital passes','Aktif'],[9,'Translate','Translation API','Aktif'],[10,'NotebookLM','AI notebook','Aktif'],[11,'Gmail','xxsazend12345@gmail.com','2FA'],[12,'MyAccount','MSI-RECOVERY-2026','Verified'],[13,'Drive','15GB','SGAE docs'],[14,'Calendar','Sovereign schedule','Aktif'],[15,'Maps','205+ countries','Aktif'],[16,'Ads','SGAE-2026','$500/mo'],[17,'Play Console','SGAE Mobile','In Dev']]},
+  unece:{countries:249,units:1000,packages:400,ports:300,countryList:[['MY','Malaysia','🇲🇾'],['SG','Singapore','🇸🇬'],['ID','Indonesia','🇮🇩'],['BN','Brunei','🇧🇳'],['TH','Thailand','🇹🇭'],['VN','Vietnam','🇻🇳'],['PH','Philippines','🇵🇭'],['CN','China','🇨🇳'],['JP','Japan','🇯🇵'],['KR','Korea','🇰🇷'],['IN','India','🇮🇳'],['AU','Australia','🇦🇺'],['US','USA','🇺🇸'],['GB','UK','🇬🇧'],['DE','Germany','🇩🇪'],['FR','France','🇫🇷'],['SA','Saudi','🇸🇦'],['AE','UAE','🇦🇪'],['CH','Switzerland','🇨🇭'],['NL','Netherlands','🇳🇱']]},
+  ledger:{total:2000,totalUSD:'$94,997,846.32',period:'Julai 2026',status:[['✅ Selesai',402,'20.1%','$19,142,847'],['🔄 Dihantar',697,'34.85%','$33,120,457'],['⏳ Diproses',501,'25.05%','$23,785,123'],['❌ Gagal',400,'20.0%','$18,949,419']],topSenders:[['Duniaku',312,'$14,823,457'],['ASEAN',287,'$13,645,123'],['INTERPOL',265,'$12,589,235'],['MyIPO',243,'$11,543,679'],['NATO',221,'$10,498,765'],['Sazwan Digital',198,'$9,405,235'],['End AI Global',187,'$8,883,457'],['Muhamad Sazwan',142,'$6,745,123']],topReceivers:[['Blockchain Hub',298,'$14,157,890'],['Cyber Security',276,'$13,109,235'],['AI Fund',254,'$12,065,789'],['Govt Malaysia',231,'$10,972,346'],['Sovereign Ledger',210,'$9,974,568'],['Duniaku',187,'$8,883,457'],['Maybank',142,'$6,745,123'],['CIMB',121,'$5,747,890']],entities:['Duniaku','Blockchain Hub','ASEAN','INTERPOL','NATO','Govt Malaysia','MyIPO','End AI Global','Sazwan Digital','Muhamad Sazwan','Bank Negara','FPX Gateway','AI Fund','Sovereign Ledger','Cyber Security','Maybank','CIMB','HLB','RHB','BIMB','Public Bank']},
+  companies:{assets:[[1,'ICBC','1398.HK','$7.03T','China'],[2,'Agricultural Bank of China','601288.SS','$6.43T','China'],[3,'China Construction Bank','601939.SS','$5.94T','China'],[4,'Bank of China','601988.SS','$4.99T','China'],[5,'JPMorgan Chase','JPM','$4.26T','USA'],[6,'Fannie Mae','FNMA','$3.75T','USA'],[7,'Freddie Mac','FMCC','$3.04T','USA'],[8,'Bank of America','BAC','$3.04T','USA'],[9,'BNP Paribas','BNP.PA','$2.95T','France'],[10,'HSBC','HSBC','$2.87T','UK']],malaysia:[[197,'Maybank','$226.3B'],[250,'CIMB Group','$167.6B'],[326,'PBBank','$122.4B'],[478,'Hong Leong Financial','$77.2B'],[802,'Tenaga Nasional','$43.5B']],mcap:[[1,'NVIDIA','NVDA','$8.51T'],[2,'Apple','AAPL','$8.05T'],[3,'Alphabet','GOOG','$7.53T'],[4,'Microsoft','MSFT','$4.95T'],[5,'Amazon','AMZN','$4.60T'],[6,'TSMC','TSM','$3.93T'],[7,'SpaceX','SPCX','$3.47T'],[8,'Broadcom','AVGO','$3.31T'],[9,'Saudi Aramco','2222.SR','$2.98T'],[10,'Meta','META','$2.78T']]},
+  ainexus:{sovereignty:'97.4%',nodes:847,params:'12.8M',decisions:1247,accuracy:'94.3%',inference:'46ms',data:'1.2M'},
+  mps:{oee:'87%',throughput:'1,240/hr',storage:'42 TB',queries:'1,240/min',streaming:'8.4K/s',mrr:'$4,280'},
+  stats:[['Rantaian','Blok','847,995'],['Rantaian','SHA-256','32D8A53...06575D51'],['API','Endpoints','42'],['API','Calls (24h)','42,847'],['Google','Services','17'],['Google','Indexed','287'],['Negara','Kerjasama','205'],['Sijil','Global','245'],['MyIPO','Pendaftaran','34'],['AI','Nod','847'],['AI','Parameters','12.8M'],['Quantum','Qubits','1,024'],['Satellite','Altitude','550 km'],['IoT','Devices','12,847'],['Threat','Critical','0'],['Kewangan','Portfolio','RM 13.1J'],['Users','Active','2.4M'],['Sovereignty','SOV.INDEX','97.4%']],
+  landTenure:{
+    freehold:[['FH-001','Sazwan Digital Valley','Kedah','2.5 Ha','RM 13,100,000'],['FH-002','SGAE Data Center','Kedah','2.0 Ha','RM 4,500,000'],['FH-003','SGAE R&D','Kedah','1.0 Ha','RM 1,000,000'],['FH-004','KL Tower','Kuala Lumpur','0.8 Ha','RM 42,000,000'],['FH-005','JB DC','Johor','3.0 Ha','RM 22,000,000']],
+    leasehold:[['LH-001','Penang Tech Hub','Pulau Pinang','1.2 Ha','RM 18,500,000','99 tahun'],['LH-002','SG APAC Hub','Singapore','0.4 Ha','RM 147,000,000','999 tahun'],['LH-003','London FinTech','UK','0.6 Ha','RM 105,000,000','999 tahun']],
+    policy:[['Pulau Pinang','>90%','<10%','Hanya 10% leasehold; diskaun premium 90%'],['Kedah','Majoriti','Minoriti','Kebanyakan freehold']]
+  },
+  kedahAiNexus:{
+    valley:{location:'F262 Kampung Pinang Tunggal, 08000 Sungai Petani, Kedah',coords:'5.6944, 100.4827',area:'2.5 Ha',tenure:'Freehold',value:'RM 13,100,000'},
+    nexus:{partners:['PKB','Systech','BDIB','TWSB'],infra:['Kulim Hi-Tech','Kedah Aerotropolis','D8-1 Data Center (20MW)']}
+  }
+};
+
+// Build all locations array
+DATA.allLocations = [
+  ...DATA.gran,
+  ...DATA.datacenters,
+  ...DATA.pops,
+  ...DATA.groundStations,
+  ...DATA.offices,
+  ...DATA.ipintel,
+  ...DATA.addresses,
+  ...DATA.special
+];
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+const SECTIONS = [
+  {group:'CORE',items:[
+    {id:'overview',name:'Overview',icon:'home'},
+    {id:'sovereign',name:'Sovereign ID',icon:'crown'},
+    {id:'software',name:'Software Mgmt',icon:'code'},
+    {id:'universalmap',name:'Universal Map',icon:'globe'},
+    {id:'gran',name:'GRAN',icon:'earth-asia'},
+    {id:'landtenure',name:'Land Tenure',icon:'file-signature'},
+    {id:'kedahainexus',name:'Kedah AI Nexus',icon:'microchip'}
+  ]},
+  {group:'ASSETS',items:[
+    {id:'insurance',name:'Insurans',icon:'shield-halved'},
+    {id:'vehicles',name:'Kenderaan',icon:'car'},
+    {id:'banks',name:'Bank',icon:'university'},
+    {id:'crypto',name:'Crypto',icon:'bitcoin'},
+    {id:'finance',name:'Finance',icon:'coins'}
+  ]},
+  {group:'IDENTITY',items:[
+    {id:'health',name:'Kesihatan',icon:'heart'},
+    {id:'education',name:'Pendidikan',icon:'graduation-cap'},
+    {id:'career',name:'Kerjaya',icon:'briefcase'},
+    {id:'contacts',name:'Kontak',icon:'phone'}
+  ]},
+  {group:'INTELLECTUAL',items:[
+    {id:'myipo',name:'MyIPO',icon:'scroll'},
+    {id:'certs',name:'Sijil',icon:'award'}
+  ]},
+  {group:'NETWORK',items:[
+    {id:'api',name:'API',icon:'plug'},
+    {id:'google',name:'Google',icon:'google'},
+    {id:'unece',name:'UNECE',icon:'globe'},
+    {id:'satellite',name:'Satellite',icon:'satellite'},
+    {id:'quantum',name:'Quantum',icon:'atom'}
+  ]},
+  {group:'SECURITY',items:[
+    {id:'threat',name:'Threat',icon:'radiation'},
+    {id:'security',name:'Security',icon:'lock'},
+    {id:'ipintel',name:'IP Intel',icon:'network-wired'}
+  ]},
+  {group:'INTELLIGENCE',items:[
+    {id:'ainexus',name:'AI Nexus',icon:'brain'},
+    {id:'mps',name:'MPS & BigData',icon:'database'},
+    {id:'bigquery',name:'BigQuery',icon:'table'},
+    {id:'ledger',name:'Ledger',icon:'money-bill-wave'},
+    {id:'companies',name:'Companies',icon:'building'},
+    {id:'stats',name:'System Stats',icon:'chart-bar'}
+  ]},
+  {group:'SOVEREIGN',items:[
+    {id:'countries',name:'Countries',icon:'flag'},
+    {id:'pow',name:'PoW',icon:'hammer'},
+    {id:'s256c',name:'S256c',icon:'key'},
+    {id:'ipo',name:'IPO',icon:'rocket'},
+    {id:'domains',name:'Domains',icon:'globe'}
+  ]}
+];
+
+let currentSection = 'overview';
+let lang = 'ms';
+let leafletMap = null;
+let clusterGroups = {};
+let wazeTimer = 120;
+
+// ============================================================
+// BUILD NAV
+// ============================================================
+function buildNav(){
+  const sb = document.getElementById('sidebar');
+  sb.innerHTML = SECTIONS.map(g => `
+    <div class="nav-group">
+      <div class="nav-group-title">${g.group}</div>
+      ${g.items.map(it => `<button class="nav-item ${it.id === currentSection ? 'active' : ''}" onclick="showSection('${it.id}')"><i class="fas fa-${it.icon}"></i> ${it.name}</button>`).join('')}
+    </div>
+  `).join('');
+}
+
+// ============================================================
+// RENDERERS
+// ============================================================
+const renderers = {
+  overview: () => `
+    <div class="section-header"><div class="section-title"><i class="fas fa-home"></i> SGAE MASTER · OVERVIEW</div><div class="section-sub">${DATA.owner.name} · ${MSI} · ${NATO} · ${SOVEREIGN}</div></div>
+    <div class="cts"><div class="cts-icon">★</div><div class="cts-title">L04 COSMIC TOP SECRET</div><div class="cts-sub">${NATO} · TIER-ALPHA</div><div class="cts-ref">Authority: MKN · NC3 MALAYSIA · Valid: 2030-01-15</div></div>
+    <div class="sha-display"><div class="sha-label"><i class="fas fa-fingerprint"></i> PRIMARY SHA-256 HASH</div><div class="sha-hash">${HASH}</div><div class="sha-meta"><span>Algorithm: SHA-256</span><span>Bits: 256</span><span>Block #847,995</span><span>✓ VERIFIED</span></div></div>
+    <div class="card gold"><div class="card-title"><i class="fas fa-crown"></i> LEGAL OWNER<span class="badge2">LOCKED</span></div><div style="text-align:center;padding:12px 0"><div style="font-family:'Google Sans',sans-serif;font-size:20px;font-weight:900;background:linear-gradient(135deg,#FFD700,#34D399,#22D3EE,#10B981);-webkit-background-clip:text;background-clip:text;color:transparent">${DATA.owner.name}</div><div class="mono" style="font-size:10px;color:var(--muted);margin-top:4px">IC: ${DATA.owner.ic} · ${MSI}</div><div class="mono" style="font-size:9px;color:#F7EA48;margin-top:2px">🔒 L04 COSMIC TOP SECRET · 205 NEGARA</div></div></div>
+    <div class="kpi-grid">
+      <div class="kpi gold" onclick="showSection('gran')"><div class="kpi-icon" style="background:rgba(255,215,0,.15);color:#FFD700"><i class="fas fa-earth-asia"></i></div><div class="kpi-label">GRAN Global</div><div class="kpi-value">RM 884.2M</div><div class="kpi-sub">12 lot · 5 benua</div></div>
+      <div class="kpi green" onclick="showSection('finance')"><div class="kpi-icon" style="background:rgba(16,185,129,.15);color:#10B981"><i class="fas fa-coins"></i></div><div class="kpi-label">Total Assets</div><div class="kpi-value">RM 3.18B</div><div class="kpi-sub">Verified</div></div>
+      <div class="kpi" onclick="showSection('crypto')"><div class="kpi-icon"><i class="fas fa-bitcoin"></i></div><div class="kpi-label">Crypto</div><div class="kpi-value">4,050 BTC</div><div class="kpi-sub">RM 1.25B</div></div>
+      <div class="kpi violet" onclick="showSection('api')"><div class="kpi-icon" style="background:rgba(168,85,247,.15);color:#A855F7"><i class="fas fa-plug"></i></div><div class="kpi-label">API</div><div class="kpi-value">42</div><div class="kpi-sub">Endpoints</div></div>
+      <div class="kpi" onclick="showSection('certs')"><div class="kpi-icon"><i class="fas fa-award"></i></div><div class="kpi-label">Certs</div><div class="kpi-value">245</div></div>
+      <div class="kpi red" onclick="showSection('threat')"><div class="kpi-icon" style="background:rgba(239,68,68,.15);color:#F87171"><i class="fas fa-radiation"></i></div><div class="kpi-label">APT</div><div class="kpi-value">24</div></div>
+      <div class="kpi" onclick="showSection('countries')"><div class="kpi-icon"><i class="fas fa-globe"></i></div><div class="kpi-label">Countries</div><div class="kpi-value">205</div></div>
+      <div class="kpi" onclick="showSection('quantum')"><div class="kpi-icon"><i class="fas fa-atom"></i></div><div class="kpi-label">Quantum</div><div class="kpi-value">1024</div></div>
+    </div>
+    <div class="card"><div class="card-title"><i class="fas fa-chart-line"></i> REVENUE PROJECTION 2026-2030</div><div class="chart-box"><canvas id="chart-revenue"></canvas></div></div>
+    <div class="card"><div class="card-title"><i class="fas fa-chart-pie"></i> CRYPTO ALLOCATION</div><div class="chart-box"><canvas id="chart-crypto"></canvas></div></div>
+  `,
+
+  sovereign: () => {
+    const o = DATA.owner;
+    return `
+      <div class="section-header"><div class="section-title"><i class="fas fa-crown"></i> SOVEREIGN IDENTITY ⑤</div><div class="section-sub">${o.name} · ${o.participant}</div></div>
+      <div class="sha-display"><div class="sha-label"><i class="fas fa-fingerprint"></i> SHA-256 FINGERPRINT</div><div class="sha-hash">${o.sha256}</div><div class="sha-meta"><span>ID: ${SOVEREIGN}</span><span>Block: #${o.block}</span><span>Wallet: ${o.btcWallet}</span></div></div>
+      <div class="card"><div class="card-title"><i class="fas fa-id-card"></i> IDENTITI</div>
+        <div class="row"><span class="k">Nama</span><span class="v gold">${o.name}</span></div>
+        <div class="row"><span class="k">No. KP</span><span class="v cyan">${o.ic}</span></div>
+        <div class="row"><span class="k">Tarikh Lahir</span><span class="v">${o.dob}</span></div>
+        <div class="row"><span class="k">Tempat Lahir</span><span class="v">${o.pob}</span></div>
+        <div class="row"><span class="k">Ibu</span><span class="v green">${o.mother}</span></div>
+        <div class="row"><span class="k">Bapa</span><span class="v green">${o.father}</span></div>
+        <div class="row"><span class="k">Email</span><span class="v cyan">${o.email}</span></div>
+        <div class="row"><span class="k">Telefon</span><span class="v cyan">${o.phone}</span></div>
+        <div class="row"><span class="k">Status</span><span class="v">${o.marital} · Pasangan: ${o.spouse}</span></div>
+        <div class="row"><span class="k">Kumpulan Darah</span><span class="v red">${o.blood}</span></div>
+        <div class="row"><span class="k">Military ID</span><span class="v gold">${o.military}</span></div>
+        <div class="row"><span class="k">INTERPOL ID</span><span class="v cyan">${o.interpol}</span></div>
+        <div class="row"><span class="k">Clearance</span><span class="v gold">${o.clearance}</span></div>
+        <div class="row"><span class="k">SSM</span><span class="v mono">${o.ssm}</span></div>
+        <div class="row"><span class="k">Net Worth</span><span class="v gold">${o.netWorth}</span></div>
+        <div class="row"><span class="k">Peranan</span><span class="v cyan">${o.role}</span></div>
+        <div class="row"><span class="k">Alamat</span><span class="v">${o.address}</span></div>
+      </div>
+      <div class="card"><div class="card-title"><i class="fas fa-key"></i> S256c TOKEN</div>
+        <div class="row"><span class="k">Harga</span><span class="v gold">${DATA.s256c.priceUSD}</span></div>
+        <div class="row"><span class="k">Market Cap</span><span class="v gold">${DATA.s256c.marketCap}</span></div>
+        <div class="row"><span class="k">Holders</span><span class="v cyan">${DATA.s256c.holders}</span></div>
+      </div>
+    `;
+  },
+
+  software: () => `
+    <div class="section-header"><div class="section-title"><i class="fas fa-code"></i> SOFTWARE MANAGEMENT ⑥</div><div class="section-sub">GitHub · Fairbase · Verification</div></div>
+    <div class="card"><div class="card-title"><i class="fab fa-github"></i> GITHUB</div>
+      <div class="row"><span class="k">Primary</span><span class="v cyan">${DATA.software.github}</span></div>
+      <div class="row"><span class="k">Alt</span><span class="v cyan">${DATA.software.githubAlt}</span></div>
+      <div class="row"><span class="k">Main Repo</span><span class="v gold">${DATA.software.mainRepo}</span></div>
+      <div class="row"><span class="k">Repos</span><span class="v gold">${DATA.software.repos}</span></div>
+      <div class="row"><span class="k">Commits</span><span class="v gold">${DATA.software.commits}</span></div>
+    </div>
+    <div class="card"><div class="card-title"><i class="fas fa-cube"></i> FAIRBASE PLATFORM</div>
+      <div class="row"><span class="k">Nama</span><span class="v gold">${DATA.software.fairbase.name}</span></div>
+      <div class="row"><span class="k">Fungsi</span><span class="v cyan">${DATA.software.fairbase.function}</span></div>
+      <div class="row"><span class="k">Lokasi</span><span class="v">${DATA.software.fairbase.location}</span></div>
+      <div class="row"><span class="k">Status</span><span class="v green">✓ ${DATA.software.fairbase.status}</span></div>
+    </div>
+    <div class="card"><div class="card-title"><i class="fas fa-shield-halved"></i> AUTOMASI VERIFIKASI</div>
+      <div class="row"><span class="k">SHA-256</span><span class="v green">${DATA.software.verification.sha256}</span></div>
+      <div class="row"><span class="k">Signed Commits</span><span class="v green">${DATA.software.verification.signedCommits}</span></div>
+      <div class="row"><span class="k">CI/CD</span><span class="v green">${DATA.software.verification.cicd}</span></div>
+      <div class="row"><span class="k">SBOM</span><span class="v">${DATA.software.verification.sbom}</span></div>
+    </div>
+    <div class="card"><div class="card-title"><i class="fas fa-cogs"></i> INFRASTRUKTUR</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;padding:8px 0">${DATA.software.infra.map(i=>`<span class="badge sha">${i}</span>`).join('')}</div>
+    </div>
+  `,
+
+  universalmap: () => `
+    <div class="section-header"><div class="section-title"><i class="fas fa-globe"></i> UNIVERSAL MAP · ${DATA.allLocations.length} LOKASI</div><div class="section-sub">8 Lapisan · Cluster · Live Crypto</div></div>
+    <div class="map-tabs">
+      <button class="map-tab active" onclick="switchMap('leaflet',this)">📍 Semua Marker</button>
+      <button class="map-tab" onclick="switchMap('waze',this)">🚗 Waze</button>
+      <button class="map-tab" onclick="switchMap('osm',this)">🌍 OSM</button>
+      <button class="map-tab" onclick="switchMap('base',this)">🗺️ Base</button>
+      <button class="map-tab" onclick="switchMap('street',this)">📸 Street</button>
+    </div>
+    <div class="map-container">
+      <div class="map-panel active" id="panel-leaflet"><div id="leaflet-map"></div></div>
+      <div class="map-panel" id="panel-waze"><iframe id="waze-frame" allowfullscreen></iframe></div>
+      <div class="map-panel" id="panel-osm"><iframe id="osm-frame" sandbox="allow-scripts"></iframe></div>
+      <div class="map-panel" id="panel-base"><iframe id="base-frame" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
+      <div class="map-panel" id="panel-street"><iframe id="street-frame" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
+    </div>
+    <div class="actions">
+      <a id="link-waze" href="#" target="_blank" class="action waze">🚗 Waze</a>
+      <a id="link-osm" href="#" target="_blank" class="action osm">🌍 OSM</a>
+      <a href="https://mylot.jupem.gov.my/" target="_blank" class="action mylot">🏞️ MyLot</a>
+      <a id="link-street" href="#" target="_blank" class="action street">📸 Street</a>
+      <button class="action export" onclick="exportKML()">🌍 KML</button>
+      <button class="action export" onclick="exportCSV()">📄 CSV</button>
+      <button class="action refresh" onclick="refreshMap()">🔄 Refresh</button>
+    </div>
+    <div class="card"><div class="card-title"><i class="fas fa-info-circle"></i> INFO</div>
+      <div class="row"><span class="k">Koordinat Semasa</span><span class="v cyan" id="coord-display">5.6470, 100.4874</span></div>
+      <div class="row"><span class="k">Total Lokasi</span><span class="v gold">${DATA.allLocations.length}</span></div>
+      <div class="row"><span class="k">Auto-Refresh Waze</span><span class="v green" id="waze-timer">2:00</span></div>
+    </div>
+    <div class="card"><div class="card-title"><i class="fas fa-layer-group"></i> LAYER TOGGLES</div>
+      <div id="layer-controls" style="display:flex;flex-wrap:wrap;gap:8px;padding:8px 0"></div>
+    </div>
+  `,
+
+  gran: () => `
+    <div class="section-header"><div class="section-title"><i class="fas fa-earth-asia"></i> GRAN · 14 LOKASI</div><div class="section-sub">RM 884,200,000 · 12 GRAN + Kedah AI Nexus + MyLot</div></div>
+    <div class="kpi-grid">
+      <div class="kpi gold"><div class="kpi-icon" style="background:rgba(255,215,0,.15);color:#FFD700"><i class="fas fa-earth-asia"></i></div><div class="kpi-label">Total Lots</div><div class="kpi-value">12</div></div>
+      <div class="kpi"><div class="kpi-icon"><i class="fas fa-ruler"></i></div><div class="kpi-label">Area</div><div class="kpi-value">49.7 Ha</div></div>
+      <div class="kpi green"><div class="kpi-icon" style="background:rgba(16,185,129,.15);color:#10B981"><i class="fas fa-flag"></i></div><div class="kpi-label">Negara</div><div class="kpi-value">12</div></div>
+      <div class="kpi violet"><div class="kpi-icon" style="background:rgba(168,85,247,.15);color:#A855F7"><i class="fas fa-globe"></i></div><div class="kpi-label">Benua</div><div class="kpi-value">5</div></div>
+    </div>
+    <div class="card"><div class="card-title"><i class="fas fa-list"></i> SEMUA 14 LOKASI</div><div class="table-wrap"><table class="table">
+      <thead><tr><th>#</th><th>ID</th><th>Flag</th><th>Nama</th><th>Negara</th><th>Nilai</th></tr></thead>
+      <tbody>${DATA.gran.map((g,i) => `<tr><td class="mono">${i+1}</td><td class="mono cyan-text" style="font-size:9px">${g.id}</td><td class="flag">${g.flag}</td><td>${g.name}</td><td>${g.country}</td><td class="gold-text mono">${g.value}</td></tr>`).join('')}</tbody>
+    </table></div></div>
+  `,
+
+  landtenure: () => `
+    <div class="section-header"><div class="section-title"><i class="fas fa-file-signature"></i> LAND TENURE</div><div class="section-sub">Freehold · Leasehold · Policy</div></div>
+    <div class="kpi-grid">
+      <div class="kpi green"><div class="kpi-icon" style="background:rgba(16,185,129,.15);color:#10B981"><i class="fas fa-infinity"></i></div><div class="kpi-label">Freehold</div><div class="kpi-value">9 LOT</div><div class="kpi-sub">Perpetuity</div></div>
+      <div class="kpi gold"><div class="kpi-icon" style="background:rgba(255,215,0,.15);color:#FFD700"><i class="fas fa-clock"></i></div><div class="kpi-label">Leasehold</div><div class="kpi-value">3 LOT</div><div class="kpi-sub">99-999 tahun</div></div>
+      <div class="kpi"><div class="kpi-icon"><i class="fas fa-map"></i></div><div class="kpi-label">Total</div><div class="kpi-value">12 LOT</div></div>
+    </div>
+    <div class="card"><div class="card-title"><i class="fas fa-infinity"></i> FREEHOLD (9)</div><div class="table-wrap"><table class="table">
+      <thead><tr><th>ID</th><th>Lokasi</th><th>Negeri</th><th>Area</th><th>Nilai</th></tr></thead>
+      <tbody>${DATA.landTenure.freehold.map(f => `<tr><td class="mono cyan-text" style="font-size:8px">${f[0]}</td><td class="green-text">${f[1]}</td><td>${f[2]}</td><td class="mono">${f[3]}</td><td class="gold-text mono">${f[4]}</td></tr>`).join('')}</tbody>
+    </table></div></div>
+    <div class="card"><div class="card-title"><i class="fas fa-clock"></i> LEASEHOLD (3)</div><div class="table-wrap"><table class="table">
+      <thead><tr><th>ID</th><th>Lokasi</th><th>Negeri</th><th>Area</th><th>Nilai</th><th>Lease</th></tr></thead>
+      <tbody>${DATA.landTenure.leasehold.map(l => `<tr><td class="mono" style="color:#FBBF24">${l[0]}</td><td class="gold-text">${l[1]}</td><td>${l[2]}</td><td class="mono">${l[3]}</td><td class="gold-text mono">${l[4]}</td><td class="mono">${l[5]}</td></tr>`).join('')}</tbody>
+    </table></div></div>
+    <div class="card"><div class="card-title"><i class="fas fa-gavel"></i> POLICY</div><div class="table-wrap"><table class="table">
+      <thead><tr><th>Negeri</th><th>Freehold</th><th>Leasehold</th><th>Nota</th></tr></thead>
+      <tbody>${DATA.landTenure.policy.map(p => `<tr><td class="cyan-text">${p[0]}</td><td class="green-text">${p[1]}</td><td class="mono">${p[2]}</td><td style="font-size:9px">${p[3]}</td></tr>`).join('')}</tbody>
+    </table></div></div>
+  `,
+
+  kedahainexus: () => `
+    <div class="section-header"><div class="section-title"><i class="fas fa-microchip"></i> KEDAH AI NEXUS</div><div class="section-sub">Sazwan Digital Valley · Kulim Hi-Tech</div></div>
+    <div class="card gold"><div class="card-title"><i class="fas fa-brain"></i> SAZWAN DIGITAL VALLEY</div>
+      <div class="row"><span class="k">Lokasi</span><span class="v gold">${DATA.kedahAiNexus.valley.location}</span></div>
+      <div class="row"><span class="k">Koordinat</span><span class="v cyan">${DATA.kedahAiNexus.valley.coords}</span></div>
+      <div class="row"><span class="k">Area</span><span class="v">${DATA.kedahAiNexus.valley.area}</span></div>
+      <div class="row"><span class="k">Tenure</span><span class="v green">${DATA.kedahAiNexus.valley.tenure}</span></div>
+      <div class="row"><span class="k">Nilai</span><span class="v gold">${DATA.kedahAiNexus.valley.value}</span></div>
+    </div>
+    <div class="card"><div class="card-title"><i class="fas fa-network-wired"></i> NEXUS INITIATIVE</div>
+      <div class="row"><span class="k">Partners</span><span class="v" style="font-size:10px">${DATA.kedahAiNexus.nexus.partners.join(' · ')}</span></div>
+      <div class="row"><span class="k">Infrastruktur</span><span class="v" style="font-size:10px">${DATA.kedahAiNexus.nexus.infra.join(' · ')}</span></div>
+    </div>
+    <div style="text-align:center;margin:10px 0">
+      <button class="action waze" onclick="showSection('universalmap');focusMap(5.6236,100.5385)"><i class="fas fa-map"></i> Buka Peta</button>
+    </div>
+  `,
+
+  insurance: () => `
+    <div class="section-header"><div class="section-title"><i class="fas fa-shield-halved"></i> INSURANS · ${DATA.insurance.length}</div><div class="section-sub">Coverage RM 112,500,000</div></div>
+    <div class="card"><div class="card-title"><i class="fas fa-list"></i> SEMUA POLISI</div><div class="table-wrap"><table class="table">
+      <thead><tr><th>ID</th><th>Kategori</th><th>Polisi</th><th>Provider</th><th>Coverage</th><th>Expiry</th></tr></thead>
+      <tbody>${DATA.insurance.map(i => `<tr><td class="mono cyan-text" style="font-size:8px">${i[0]}</td><td class="cyan-text">${i[1]}</td><td>${i[2]}</td><td>${i[3]}</td><td class="gold-text mono">${i[4]}</td><td class="mono">${i[5]}</td></tr>`).join('')}</tbody>
+    </table></div></div>
+  `,
+
+  vehicles: () => `
+    <div class="section-header"><div class="section-title"><i class="fas fa-car"></i> KENDERAAN · ${DATA.vehicles.length}</div><div class="section-sub">Nilai RM 538,420,000</div></div>
+    <div class="card"><div class="card-title"><i class="fas fa-list"></i> SEMUA KENDERAAN</div><div class="table-wrap"><table class="table">
+      <thead><tr><th>ID</th><th>Kategori</th><th>Model</th><th>Tahun</th><th>Plat</th><th>Nilai</th></tr></thead>
+      <tbody>${DATA.vehicles.map(v => `<tr><td class="mono" style="font-size:8px">${v[0]}</td><td style="color:#F43F5E">${v[1]}</td><td>${v[2]}</td><td class="mono">${v[3]}</td><td class="gold-text mono">${v[4]}</td><td class="gold-text mono">${v[5]}</td></tr>`).join('')}</tbody>
+    </table></div></div>
+  `,
+
+  banks: () => `
+    <div class="section-header"><div class="section-title"><i class="fas fa-university"></i> BANK</div></div>
+    <div class="card"><div class="table-wrap"><table class="table">
+      <thead><tr><th>Bank</th><th>No. Akaun</th><th>Balance</th></tr></thead>
+      <tbody>${DATA.banks.map(b => `<tr><td class="green-text">${b[0]}</td><td class="cyan-text mono">${b[1]}</td><td class="gold-text mono">${b[2]}</td></tr>`).join('')}</tbody>
+    </table></div></div>
+  `,
+
+  crypto: () => `
+    <div class="section-header"><div class="section-title"><i class="fas fa-bitcoin"></i> CRYPTO HOLDINGS</div><div class="section-sub">Total RM 1,256,996,500</div></div>
+    <div class="card"><div class="card-title"><i class="fas fa-wallet"></i> SEMUA HOLDINGS<span class="badge2">LIVE</span></div><div class="table-wrap"><table class="table">
+      <thead><tr><th>Symbol</th><th>Nama</th><th>Amount</th><th>Price</th><th>Value</th><th>24h</th></tr></thead>
+      <tbody>${DATA.crypto.map(c => `<tr><td class="cyan-text mono"><strong>${c.sym}</strong></td><td>${c.name}</td><td class="mono">${c.amount}</td><td class="mono">${c.price}</td><td class="gold-text mono">${c.value}</td><td class="${c.change.startsWith('+') ? 'green-text' : 'red-text'} mono">${c.change}</td></tr>`).join('')}</tbody>
+    </table></div></div>
+  `,
+
+  finance: () => `
+    <div class="section-header"><div class="section-title"><i class="fas fa-coins"></i> FINANCE</div><div class="section-sub">Total Assets ${DATA.finance.assets}</div></div>
+    <div class="kpi-grid">
+      <div class="kpi green"><div class="kpi-icon" style="background:rgba(16,185,129,.15);color:#10B981"><i class="fas fa-chart-line"></i></div><div class="kpi-label">Revenue</div><div class="kpi-value" style="font-size:13px">${DATA.finance.revenue}</div></div>
+      <div class="kpi green"><div class="kpi-icon" style="background:rgba(16,185,129,.15);color:#10B981"><i class="fas fa-coins"></i></div><div class="kpi-label">EBITDA</div><div class="kpi-value" style="font-size:13px">${DATA.finance.ebitda}</div></div>
+      <div class="kpi"><div class="kpi-icon"><i class="fas fa-dollar-sign"></i></div><div class="kpi-label">Net Profit</div><div class="kpi-value" style="font-size:13px">${DATA.finance.net}</div></div>
+      <div class="kpi gold"><div class="kpi-icon" style="background:rgba(255,215,0,.15);color:#FFD700"><i class="fas fa-globe"></i></div><div class="kpi-label">Total Assets</div><div class="kpi-value" style="font-size:11px">${DATA.finance.assets}</div></div>
+    </div>
+    <div class="card"><div class="card-title"><i class="fas fa-file-invoice-dollar"></i> PROFIT & LOSS</div><div class="table-wrap"><table class="table">
+      <thead><tr><th>Item</th><th>2026</th><th>2025</th><th>Growth</th></tr></thead>
+      <tbody>${DATA.finance.pl.map(p => `<tr><td class="green-text">${p[0]}</td><td class="gold-text mono">${p[1]}</td><td class="mono">${p[2]}</td><td class="green-text mono">${p[3]}</td></tr>`).join('')}</tbody>
+    </table></div></div>
+    <div class="card"><div class="card-title"><i class="fas fa-globe"></i> GLOBAL ASSETS</div><div class="table-wrap"><table class="table">
+      <thead><tr><th>Aset</th><th>Nilai</th></tr></thead>
+      <tbody>${DATA.finance.globalAssets.map(a => `<tr><td class="${a[0]==='Total Assets'?'gold-text':'green-text'}">${a[0]}</td><td class="gold-text mono">${a[1]}</td></tr>`).join('')}</tbody>
+    </table></div></div>
+  `,
+
+  health: () => `
+    <div class="section-header"><div class="section-title"><i class="fas fa-heart"></i> KESIHATAN</div><div class="section-sub">${DATA.owner.blood} · ${DATA.owner.height} · ${DATA.owner.weight}</div></div>
+    <div class="card"><div class="table-wrap"><table class="table">
+      <thead><tr><th>Kategori</th><th>Ukuran</th><th>Nilai</th><th>Status</th></tr></thead>
+      <tbody>${DATA.health.map(h => `<tr><td class="green-text">${h[0]}</td><td>${h[1]}</td><td class="gold-text mono">${h[2]}</td><td class="green-text">${h[3]}</td></tr>`).join('')}</tbody>
+    </table></div></div>
+  `,
+
+  education: () => `
+    <div class="section-header"><div class="section-title"><i class="fas fa-graduation-cap"></i> PENDIDIKAN</div><div class="section-sub">PhD Sains Komputer (AI) · UM</div></div>
+    <div class="card"><div class="table-wrap"><table class="table">
+      <thead><tr><th>ID</th><th>Tahap</th><th>Institusi</th><th>Tahun</th><th>Kelulusan</th><th>Keputusan</th></tr></thead>
+      <tbody>${DATA.education.map(e => `<tr><td class="mono cyan-text" style="font-size:8px">${e[0]}</td><td style="color:#3B82F6">${e[1]}</td><td>${e[2]}</td><td class="mono">${e[3]}</td><td>${e[4]}</td><td class="gold-text">${e[5]}</td></tr>`).join('')}</tbody>
+    </table></div></div>
+  `,
+
+  career: () => `
+    <div class="section-header"><div class="section-title"><i class="fas fa-briefcase"></i> KERJAYA</div><div class="section-sub">Founder & CEO · Sazwan Digital</div></div>
+    <div class="card"><div class="table-wrap"><table class="table">
+      <thead><tr><th>Periode</th><th>Jawatan</th><th>Syarikat</th><th>Lokasi</th><th>Gaji</th></tr></thead>
+      <tbody>${DATA.career.map(c => `<tr><td class="mono">${c[0]}</td><td style="color:#8B5CF6">${c[1]}</td><td>${c[2]}</td><td>${c[3]}</td><td class="gold-text mono">${c[4]}</td></tr>`).join('')}</tbody>
+    </table></div></div>
+  `,
+
+  contacts: () => `
+    <div class="section-header"><div class="section-title"><i class="fas fa-phone"></i> KONTAK</div></div>
+    <div class="card"><div class="card-title"><i class="fas fa-address-card"></i> PRIMARY</div>${DATA.contacts.primary.map(c => `<div class="row"><span class="k">${c[0]}</span><span class="v cyan">${c[1]}</span></div>`).join('')}</div>
+    <div class="card"><div class="card-title"><i class="fas fa-share-alt"></i> SOCIAL</div>${DATA.contacts.social.map(s => `<div class="row"><span class="k">${s[0]}</span><span class="v">${s[1]}</span></div>`).join('')}</div>
+    <div class="card" style="border-color:rgba(239,68,68,.4)"><div class="card-title" style="color:#F87171"><i class="fas fa-exclamation-triangle"></i> EMERGENCY 24/7</div>
+      <div class="table-wrap"><table class="table"><thead><tr><th>Jenis</th><th>Nombor</th><th>Respons</th></tr></thead>
+      <tbody>${DATA.contacts.emergency.map(e => `<tr><td class="red-text">${e[0]}</td><td class="gold-text mono">${e[1]}</td><td class="green-text">${e[2]}</td></tr>`).join('')}</tbody></table></div>
+    </div>
+  `,
+
+  myipo: () => `
+    <div class="section-header"><div class="section-title"><i class="fas fa-scroll"></i> MyIPO · 34 IP</div></div>
+    <div class="card"><div class="card-title"><i class="fas fa-lightbulb"></i> PATEN (6)</div><div class="table-wrap"><table class="table">
+      <thead><tr><th>ID</th><th>Tajuk</th><th>Status</th></tr></thead>
+      <tbody>${DATA.myipo.patents.map(p => `<tr><td class="mono cyan-text" style="font-size:8px">${p[0]}</td><td>${p[1]}</td><td class="green-text">● ${p[2]}</td></tr>`).join('')}</tbody>
+    </table></div></div>
+    <div class="card"><div class="card-title"><i class="fas fa-trademark"></i
+https://github.com/Sazwan96/SGAE-Data-Lake.git
